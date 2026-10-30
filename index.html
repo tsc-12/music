@@ -77,7 +77,8 @@
   .row .title-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .thumb { width: 40px; height: 40px; border-radius: 4px; display: grid; place-items: center; font-weight: 800; color: #fff; flex-shrink: 0; overflow: hidden; background: #282828; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .row .t { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .t { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .row .t:hover { text-decoration: underline; }
   .row .sub { font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row .alb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .85rem; }
   .row.active .t, .row.active .num { color: var(--green); }
@@ -91,6 +92,40 @@
 
   #msg { color: var(--muted); font-size: .85rem; padding: 0 28px; min-height: 1.2em; }
   #msg.err { color: #ff8a8a; }
+
+  /* ---------- Now Playing page ---------- */
+  #npPage {
+    position: fixed; left: 8px; right: 8px; top: 8px; bottom: 106px; z-index: 40;
+    border-radius: 8px; overflow-y: auto; display: none; flex-direction: column;
+    background: linear-gradient(180deg, #2c2c54 0%, #121212 90%);
+  }
+  #npPage.open { display: flex; }
+  .np-top { display: flex; align-items: center; gap: 14px; padding: 18px 24px; position: sticky; top: 0; z-index: 2; }
+  .back-btn {
+    display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.35); color: #fff; border: none;
+    border-radius: 500px; padding: 10px 18px; font-weight: 700; font-size: .9rem; cursor: pointer;
+  }
+  .back-btn:hover { background: rgba(0,0,0,.55); transform: scale(1.03); }
+  .np-label { font-weight: 700; opacity: .85; }
+  .np-body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px 40px; }
+  #npPage .np-art {
+    width: min(46vh, 80vw, 440px); height: auto; aspect-ratio: 1 / 1; border-radius: 14px;
+    font-size: 8rem; box-shadow: 0 20px 60px rgba(0,0,0,.55); margin-top: 4px;
+  }
+  .np-info { text-align: center; max-width: 720px; }
+  .np-info h2 { margin: 8px 0 4px; font-size: clamp(1.6rem, 4vw, 2.8rem); line-height: 1.1; word-break: break-word; }
+  #npArtist { font-size: 1.1rem; opacity: .85; }
+  .np-meta { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  .np-meta span { background: rgba(255,255,255,.12); border-radius: 500px; padding: 5px 12px; font-size: .78rem; }
+  .np-next { width: min(720px, 100%); margin-top: 18px; }
+  .np-next h3 { font-size: 1.25rem; margin: 0 0 10px; }
+  .np-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  .np-row:hover { background: rgba(255,255,255,.1); }
+  .np-row .who { flex: 1; min-width: 0; }
+  .np-row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-row .a { font-size: .78rem; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-row .d { font-size: .8rem; opacity: .75; }
+  .np-none { opacity: .7; font-size: .9rem; padding: 8px 10px; }
 
   /* ---------- Context menu ---------- */
   #menu { position: fixed; display: none; background: #282828; border-radius: 6px; padding: 4px; min-width: 230px; max-width: 300px; max-height: 70vh; overflow-y: auto; box-shadow: 0 16px 40px rgba(0,0,0,.6); z-index: 50; }
@@ -119,8 +154,9 @@
   /* ---------- Player bar ---------- */
   .bar { grid-column: 1 / -1; background: var(--bg); display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; padding: 0 12px; gap: 12px; }
   .np { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .np .thumb { width: 56px; height: 56px; }
-  .np .name { font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np .thumb { width: 56px; height: 56px; cursor: pointer; }
+  .np .name { font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .np .name:hover { text-decoration: underline; }
   .np .sub { font-size: .75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .center { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .controls { display: flex; align-items: center; gap: 18px; }
@@ -158,6 +194,7 @@
     .right { display: none; }
     .np .thumb { width: 44px; height: 44px; }
     .search { margin-left: 0; }
+    #npPage .np-art { font-size: 5rem; }
   }
 </style>
 </head>
@@ -204,11 +241,31 @@
   </div>
 </main>
 
-<footer class="bar">
+<!-- Now Playing page -->
+<section id="npPage" aria-label="Now playing">
+  <div class="np-top">
+    <button class="back-btn" id="npBack" title="Back">← Back</button>
+    <div class="np-label">Now Playing</div>
+  </div>
+  <div class="np-body">
+    <div class="thumb np-art" id="npArt">♪</div>
+    <div class="np-info">
+      <h2 id="npTitle"></h2>
+      <div id="npArtist"></div>
+      <div class="np-meta" id="npMeta"></div>
+    </div>
+    <div class="np-next">
+      <h3 id="npNextHead">Up next</h3>
+      <div id="npNextList"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bar" id="bar">
   <div class="np">
-    <div class="thumb" id="npThumb">♪</div>
+    <div class="thumb" id="npThumb" title="Open Now Playing">♪</div>
     <div style="min-width:0">
-      <div class="name" id="npName">Nothing playing</div>
+      <div class="name" id="npName" title="Open Now Playing">Nothing playing</div>
       <div class="sub" id="npSub">Add some songs</div>
     </div>
   </div>
@@ -242,6 +299,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const audio = $('audio');
+  const npPage = $('npPage');
 
   /* ================= state ================= */
   let tracks = [];            // song records
@@ -253,7 +311,9 @@
   let shuffleOn = false, repeatMode = 0;   // repeat: 0 off, 1 all, 2 one
   let history = [];
   let db = null, memId = 1, currentUrl = null;
+  let npOpen = false;         // is the Now Playing page showing?
   const coverUrls = new Map();
+  const colorCache = new Map();
   const retried = new Set();
 
   /* ================= helpers ================= */
@@ -376,6 +436,7 @@
       if (p.trackIds.includes(id)) { p.trackIds = p.trackIds.filter(x => x !== id); savePlaylist(p); }
     }
     if (coverUrls.has(id)) { URL.revokeObjectURL(coverUrls.get(id)); coverUrls.delete(id); }
+    colorCache.delete(id);
     tracks = tracks.filter(x => x.id !== id);
     queue = queue.filter(x => x !== id);
     history = history.filter(x => x !== id);
@@ -558,6 +619,8 @@
       const th = document.createElement('div'); th.className = 'thumb'; fillThumb(th, t);
       const txt = document.createElement('div'); txt.style.minWidth = 0;
       const tt = document.createElement('div'); tt.className = 't'; tt.textContent = titleOf(t);
+      tt.title = 'Open Now Playing';
+      tt.onclick = e => { e.stopPropagation(); playTrack(t.id, ids); openNP(); };   // clicking the NAME opens the page
       const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = artistOf(t);
       txt.append(tt, sb); tc.append(th, txt);
 
@@ -592,8 +655,96 @@
     fillThumb($('npThumb'), t);
     document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'My Music';
     $('play').textContent = audio.paused ? '▶' : '⏸';
+    renderNP();
   }
   function renderAll() { renderSidebar(); renderMain(); updateBar(); }
+
+  /* ================= Now Playing page ================= */
+  function setNpBottom() { npPage.style.bottom = ($('bar').offsetHeight + 16) + 'px'; }
+
+  function openNP() {
+    if (curId == null || npOpen) return;
+    npOpen = true;
+    setNpBottom();
+    npPage.classList.add('open');
+    try { history.pushState({ np: true }, ''); } catch (e) {}   // so the browser/phone Back button closes the page
+    renderNP();
+    npPage.scrollTop = 0;
+  }
+  function closeNP(fromPop) {
+    if (!npOpen) return;
+    npOpen = false;
+    npPage.classList.remove('open');
+    if (!fromPop) { try { if (history.state && history.state.np) history.back(); } catch (e) {} }
+  }
+  window.addEventListener('popstate', () => { if (npOpen) closeNP(true); });
+  window.addEventListener('resize', () => { if (npOpen) setNpBottom(); });
+
+  function setNpBackground(t) {
+    const apply = c => { npPage.style.background = `linear-gradient(180deg, ${c} 0%, #121212 90%)`; };
+    if (colorCache.has(t.id)) return apply(colorCache.get(t.id));
+    apply(`hsl(${hue(titleOf(t))},45%,28%)`);
+    const u = coverUrl(t);
+    if (!u) return;
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas'); c.width = c.height = 24;
+        const x = c.getContext('2d'); x.drawImage(img, 0, 0, 24, 24);
+        const d = x.getImageData(0, 0, 24, 24).data;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+        const k = 0.75 / n;                       // average colour, darkened so the text stays readable
+        const col = `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)})`;
+        colorCache.set(t.id, col);
+        if (npOpen && curId === t.id) apply(col);
+      } catch (e) {}
+    };
+    img.src = u;
+  }
+
+  function renderNP() {
+    if (!npOpen) return;
+    const t = byId(curId);
+    if (!t) { closeNP(); return; }
+
+    fillThumb($('npArt'), t);
+    $('npTitle').textContent = titleOf(t);
+    $('npArtist').textContent = artistOf(t);
+
+    const meta = $('npMeta'); meta.innerHTML = '';
+    [
+      t.album, t.year, t.genre,
+      t.trackNo ? 'Track ' + t.trackNo : '',
+      t.duration ? fmt(t.duration) : '',
+      (t.type || '').replace('audio/', '').replace('x-', '').toUpperCase(),
+      sizeMB(t.size)
+    ].filter(Boolean).forEach(v => { const s = document.createElement('span'); s.textContent = v; meta.appendChild(s); });
+
+    setNpBackground(t);
+
+    // up next
+    const list = $('npNextList'); list.innerHTML = '';
+    $('npNextHead').textContent = shuffleOn ? 'Queue (shuffle is on)' : 'Up next';
+    const i = queue.indexOf(curId);
+    const upcoming = (i === -1 ? [] : queue.slice(i + 1)).map(byId).filter(Boolean).slice(0, 10);
+    if (!upcoming.length) {
+      const d = document.createElement('div'); d.className = 'np-none'; d.textContent = 'Nothing else in the queue.';
+      list.appendChild(d);
+    }
+    upcoming.forEach(u => {
+      const row = document.createElement('div'); row.className = 'np-row';
+      const th = document.createElement('div'); th.className = 'thumb'; fillThumb(th, u);
+      const who = document.createElement('div'); who.className = 'who';
+      const tt = document.createElement('div'); tt.className = 't'; tt.textContent = titleOf(u);
+      const aa = document.createElement('div'); aa.className = 'a'; aa.textContent = artistOf(u);
+      who.append(tt, aa);
+      const d = document.createElement('div'); d.className = 'd'; d.textContent = u.duration ? fmt(u.duration) : '';
+      row.append(th, who, d);
+      row.onclick = () => playTrack(u.id);
+      list.appendChild(row);
+    });
+  }
 
   /* ================= playback ================= */
   function playTrack(id, newQueue, fromHistory) {
@@ -716,11 +867,15 @@
     };
   });
 
+  // Now Playing page open/close
+  $('npBack').onclick = () => closeNP();
+  $('npThumb').onclick = $('npName').onclick = () => { npOpen ? closeNP() : openNP(); };
+
   $('play').onclick = toggle;
   $('bigPlay').onclick = bigPlay;
   $('next').onclick = () => next(false);
   $('prev').onclick = prev;
-  $('shuffle').onclick = () => { shuffleOn = !shuffleOn; $('shuffle').classList.toggle('on', shuffleOn); };
+  $('shuffle').onclick = () => { shuffleOn = !shuffleOn; $('shuffle').classList.toggle('on', shuffleOn); renderNP(); };
   $('repeat').onclick = () => {
     repeatMode = (repeatMode + 1) % 3;
     $('repeat').textContent = repeatMode === 2 ? '🔂' : '🔁';
@@ -735,6 +890,7 @@
   audio.volume = 0.8; setPct($('vol')); setPct($('seek'));
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && npOpen && !dlg.open) { closeNP(); return; }
     if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
     if (dlg.open) return;
     if (e.code === 'Space') { e.preventDefault(); toggle(); }
