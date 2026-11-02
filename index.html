@@ -213,6 +213,8 @@
   .st-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .st-sw { display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .st-note { color: #b3b3b3; font-size: .82rem; line-height: 1.5; margin: 10px 0 0; }
+  .st-sub { margin: 0 0 12px; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .st-hr { border: none; border-top: 1px solid #3e3e3e; margin: 22px 0; }
   #settings input[type=checkbox] { width: 18px; height: 18px; padding: 0; margin: 0; background: none; border: none; accent-color: var(--green); }
   #settings select { margin-left: auto; background: #3e3e3e; color: #fff; border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; font-size: .9rem; }
   #settings select:focus { outline: none; border-color: #fff; }
@@ -235,6 +237,14 @@
     .eq-wrap { width: 26px; }
     .eq-db, .eq-hz { font-size: .6rem; }
   }
+
+  /* ---------- Update log ---------- */
+  .log-entry { padding: 0 0 16px; margin-bottom: 16px; border-bottom: 1px solid #3e3e3e; }
+  .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
+  .log-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .log-ver { background: var(--green); color: #000; font-weight: 800; font-size: .75rem; border-radius: 500px; padding: 3px 10px; }
+  .log-date { color: var(--muted); font-size: .8rem; }
+  .log-entry ul { margin: 0; padding-left: 20px; line-height: 1.6; font-size: .9rem; }
 
   /* ---------- Settings gear icon ---------- */
   .icon-btn { margin-left: auto; background: none; border: none; color: var(--muted); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
@@ -348,11 +358,12 @@
 <dialog id="settings">
   <div class="st-head"><h3>Settings</h3><button class="st-x" id="stClose" title="Close">✕</button></div>
   <div class="st-tabs">
-    <button class="st-tab active" data-tab="eq">🎚️ Equalizer</button>
-    <button class="st-tab" data-tab="play">🔊 Playback</button>
+    <button class="st-tab active" data-tab="play">🔊 Playback</button>
+    <button class="st-tab" data-tab="log">📝 Update Log</button>
   </div>
 
-  <div class="st-pane" id="pane-eq">
+  <div class="st-pane" id="pane-play">
+    <h4 class="st-sub">Equalizer</h4>
     <div class="st-row">
       <label class="st-sw"><input type="checkbox" id="eqOn"> <b>Equalizer on</b></label>
       <select id="eqPreset" title="Presets"></select>
@@ -365,11 +376,16 @@
       <span id="eqPreVal" style="min-width:60px;color:#b3b3b3;font-size:.9rem">0 dB</span>
     </div>
     <p class="st-note" id="eqNote"></p>
-  </div>
 
-  <div class="st-pane" id="pane-play" hidden>
+    <hr class="st-hr">
+
+    <h4 class="st-sub">Volume</h4>
     <div class="st-row"><label class="st-sw"><input type="checkbox" id="eqLevel"> <b>Volume leveling</b></label></div>
     <p class="st-note">Evens out loud and quiet parts so songs sound more consistent. Turn it off for the most natural sound.</p>
+  </div>
+
+  <div class="st-pane" id="pane-log" hidden>
+    <div id="logList"></div>
   </div>
 </dialog>
 
@@ -1115,8 +1131,8 @@
   stDlg.addEventListener('click', e => { if (e.target === stDlg) stDlg.close(); });   // click outside to close
   document.querySelectorAll('.st-tab').forEach(b => b.onclick = () => {
     document.querySelectorAll('.st-tab').forEach(x => x.classList.toggle('active', x === b));
-    $('pane-eq').hidden = b.dataset.tab !== 'eq';
     $('pane-play').hidden = b.dataset.tab !== 'play';
+    $('pane-log').hidden = b.dataset.tab !== 'log';
   });
   $('eqOn').onchange = e => { eq.on = e.target.checked; applyEq(); saveSettings(); refreshEqUI(); };
   $('eqPreset').onchange = e => {
@@ -1130,6 +1146,38 @@
     applyEq(); saveSettings(); refreshEqUI();
   };
   $('eqLevel').onchange = e => { eq.leveling = e.target.checked; applyEq(); saveSettings(); };
+
+  /* ================= update log ================= */
+  // Add new releases at the TOP of this list.
+  const CHANGELOG = [
+    { v: '1.2', date: 'Nov 2026', notes: [
+      'Added Settings window with a 10-band equalizer and presets',
+      'Added volume leveling',
+      'Moved the equalizer into the Playback tab',
+      'Added this Update Log'
+    ]},
+    { v: '1.1', date: 'Earlier', notes: [
+      'Added Now Playing page with cover-art colors and Up Next queue',
+      'Reads song tags (title, artist, album, cover art)',
+      'Playlists, search, and column sorting'
+    ]},
+    { v: '1.0', date: 'Earlier', notes: [
+      'First release: add music, library, and a basic player bar'
+    ]}
+  ];
+  (function renderLog() {
+    const box = $('logList'); box.innerHTML = '';
+    CHANGELOG.forEach(r => {
+      const e = document.createElement('div'); e.className = 'log-entry';
+      const top = document.createElement('div'); top.className = 'log-top';
+      const v = document.createElement('span'); v.className = 'log-ver'; v.textContent = 'v' + r.v;
+      const d = document.createElement('span'); d.className = 'log-date'; d.textContent = r.date;
+      top.append(v, d);
+      const ul = document.createElement('ul');
+      r.notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+      e.append(top, ul); box.appendChild(e);
+    });
+  })();
 
   buildEqUI(); refreshEqUI(); updateEqNote();
 
