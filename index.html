@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Music</title>
-<!-- Reads song tags (title, artist, album, cover art). The player still works without it, using file names. -->
+<!-- Only used as a fallback to read tags straight from song files when songs.json has no metadata for them -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <style>
   :root {
-    --bg: #000; --panel: #121212; --card: #181818; --hover: #2a2a2a;
+    --bg: #000; --panel: #121212; --hover: #2a2a2a;
     --text: #fff; --muted: #b3b3b3; --green: #1db954;
   }
   * { box-sizing: border-box; }
@@ -29,12 +29,7 @@
   .nav-item.active, .pl-item.active { color: #fff; background: var(--hover); }
   .pl-item .n { font-size: .75rem; font-weight: 500; color: var(--muted); }
   .pl-item .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .add-btn {
-    background: var(--green); color: #000; border: none; font-weight: 700; font-size: .95rem;
-    padding: 11px 16px; border-radius: 500px; cursor: pointer; text-align: center; margin: 4px 4px 8px;
-  }
-  .add-btn:hover { transform: scale(1.03); background: #1ed760; }
-  .pl-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-weight: 700; font-size: .85rem; padding: 4px 10px; border-top: 1px solid #2a2a2a; padding-top: 14px; }
+  .pl-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-weight: 700; font-size: .85rem; padding: 4px 10px; border-top: 1px solid #2a2a2a; padding-top: 14px; margin-top: 6px; }
   .pl-head button { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; }
   .pl-head button:hover { color: #fff; background: var(--hover); }
   .pl-list { overflow-y: auto; flex: 1; min-height: 0; }
@@ -43,7 +38,6 @@
 
   /* ---------- Main ---------- */
   .main { background: linear-gradient(#2c2c54 0, var(--panel) 300px); border-radius: 8px; overflow-y: auto; position: relative; min-width: 0; }
-  .main.dragover { outline: 2px dashed var(--green); outline-offset: -8px; }
   .hero { padding: 36px 28px 16px; display: flex; align-items: flex-end; gap: 20px; }
   .hero-art { width: 160px; height: 160px; border-radius: 6px; background: linear-gradient(135deg, #450af5, #c4efd9); display: grid; place-items: center; font-size: 3.5rem; box-shadow: 0 8px 30px rgba(0,0,0,.5); flex-shrink: 0; overflow: hidden; }
   .hero-art img { width: 100%; height: 100%; object-fit: cover; }
@@ -87,8 +81,9 @@
   .row .dots:hover { color: #fff; background: #3a3a3a; }
   .dur { text-align: right; }
 
-  .empty { text-align: center; color: var(--muted); padding: 60px 20px; line-height: 1.5; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; line-height: 1.6; }
   .empty h2 { color: var(--text); margin-bottom: 8px; }
+  .empty code { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; }
 
   #msg { color: var(--muted); font-size: .85rem; padding: 0 28px; min-height: 1.2em; }
   #msg.err { color: #ff8a8a; }
@@ -131,7 +126,6 @@
   #menu { position: fixed; display: none; background: #282828; border-radius: 6px; padding: 4px; min-width: 230px; max-width: 300px; max-height: 70vh; overflow-y: auto; box-shadow: 0 16px 40px rgba(0,0,0,.6); z-index: 50; }
   #menu .mi { padding: 10px 12px; font-size: .88rem; border-radius: 3px; cursor: pointer; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #menu .mi:hover { background: #3e3e3e; }
-  #menu .mi.danger { color: #ff8a8a; }
   #menu .ml { padding: 8px 12px 4px; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
   #menu hr { border: none; border-top: 1px solid #3e3e3e; margin: 4px 0; }
 
@@ -183,10 +177,9 @@
     body { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
     .sidebar { flex-direction: row; align-items: center; overflow-x: auto; padding: 10px; gap: 8px; }
     .logo, .side-note, .pl-head span, .pl-none { display: none; }
-    .pl-head { border: none; padding: 0; }
+    .pl-head { border: none; padding: 0; margin: 0; }
     .pl-list { display: flex; gap: 8px; overflow: visible; flex: none; }
     .nav-item, .pl-item { white-space: nowrap; background: #242424; flex-shrink: 0; }
-    .add-btn { margin: 0; white-space: nowrap; flex-shrink: 0; }
     .hero-art { width: 100px; height: 100px; font-size: 2.2rem; }
     .head, .row { grid-template-columns: 30px minmax(0, 1fr) 54px 32px; }
     .head > :nth-child(3), .row .alb { display: none; }
@@ -202,12 +195,10 @@
 
 <aside class="sidebar">
   <div class="logo"><span>♪</span> My Music</div>
-  <div class="nav-item active" id="navLib">Home</div>
-  <button class="add-btn" id="addBtn">＋ Add songs</button>
-  <input type="file" id="files" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.opus" multiple hidden>
+  <div class="nav-item active" id="navLib">🏠 Your Library</div>
   <div class="pl-head"><span>Playlists</span><button id="newPl" title="Create playlist">＋</button></div>
   <div class="pl-list" id="plList"></div>
-  <div class="side-note">Your songs stay on this device, saved in your browser. Made by TSC!</div>
+  <div class="side-note">Playlists are saved in this browser.</div>
 </aside>
 
 <main class="main" id="main">
@@ -216,7 +207,7 @@
     <div style="min-width:0">
       <small id="heroLabel">Library</small>
       <h1 id="heroTitle">Your Library</h1>
-      <p id="count">0 songs</p>
+      <p id="count">Loading…</p>
     </div>
   </div>
 
@@ -266,7 +257,7 @@
     <div class="thumb" id="npThumb" title="Open Now Playing">♪</div>
     <div style="min-width:0">
       <div class="name" id="npName" title="Open Now Playing">Nothing playing</div>
-      <div class="sub" id="npSub">Add some songs</div>
+      <div class="sub" id="npSub">Pick a song</div>
     </div>
   </div>
 
@@ -300,24 +291,24 @@
   const $ = id => document.getElementById(id);
   const audio = $('audio');
   const npPage = $('npPage');
+  const PL_KEY = 'my-music-playlists-v1';
 
   /* ================= state ================= */
-  let tracks = [];            // song records
-  let playlists = [];         // {id, name, trackIds[]}
-  let view = 'library';       // 'library' or a playlist id
+  let songs = [];                 // hosted songs, loaded from songs.json
+  const map = new Map();          // id (file path) -> song
+  let playlists = [];             // {id, name, trackIds[]}  (saved in this browser)
+  let loaded = false, loadError = false;
+  let view = 'library';
   let sortKey = '', sortDir = 1;
-  let queue = [];             // track ids currently being played through
-  let curId = null;
-  let shuffleOn = false, repeatMode = 0;   // repeat: 0 off, 1 all, 2 one
-  let history = [];
-  let db = null, memId = 1, currentUrl = null;
-  let npOpen = false;         // is the Now Playing page showing?
-  const coverUrls = new Map();
+  let queue = [], curId = null, played = [];
+  let shuffleOn = false, repeatMode = 0;     // repeat: 0 off, 1 all, 2 one
+  let npOpen = false;
   const colorCache = new Map();
-  const retried = new Set();
 
   /* ================= helpers ================= */
-  const byId = id => tracks.find(t => t.id === id);
+  const byId = id => map.get(id);
+  const url = p => p.split('/').map(encodeURIComponent).join('/');
+  const abs = u => new URL(u, location.href).href;
   const clean = v => (v == null ? '' : String(v).trim());
   const titleOf = t => t.title || t.name || 'Untitled';
   const artistOf = t => t.artist || 'Unknown artist';
@@ -326,137 +317,112 @@
   const hue = str => { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
   const thumbStyle = n => `background:linear-gradient(135deg,hsl(${hue(n)},60%,40%),hsl(${(hue(n)+50)%360},60%,25%))`;
   const setPct = el => el.style.setProperty('--pct', (el.value / el.max * 100) + '%');
-  const isAudio = f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|opus|weba)$/i.test(f.name);
   const msg = (t, err) => { const m = $('msg'); m.textContent = t || ''; m.className = err ? 'err' : ''; };
   const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
 
-  function coverUrl(t) {
-    if (!t || !t.cover) return null;
-    if (!coverUrls.has(t.id)) coverUrls.set(t.id, URL.createObjectURL(t.cover));
-    return coverUrls.get(t.id);
-  }
   function fillThumb(el, t) {
     el.innerHTML = ''; el.removeAttribute('style');
-    const u = t && coverUrl(t);
-    if (u) { const img = document.createElement('img'); img.src = u; img.alt = ''; el.appendChild(img); }
-    else if (t) { el.setAttribute('style', thumbStyle(titleOf(t))); el.textContent = titleOf(t).charAt(0).toUpperCase(); }
-    else el.textContent = '♪';
+    if (t && t.cover) {
+      const img = document.createElement('img');
+      img.loading = 'lazy'; img.alt = ''; img.src = t.cover;
+      img.onerror = () => { t.cover = null; fillThumb(el, t); };
+      el.appendChild(img);
+    } else if (t) {
+      el.setAttribute('style', thumbStyle(titleOf(t)));
+      el.textContent = titleOf(t).charAt(0).toUpperCase();
+    } else el.textContent = '♪';
   }
 
-  /* ================= storage (IndexedDB) ================= */
-  function openDB() {
-    return new Promise((res, rej) => {
-      if (!window.indexedDB) return rej(new Error('no idb'));
-      const r = indexedDB.open('local-music-player', 2);
-      r.onupgradeneeded = () => {
-        const d = r.result;
-        if (!d.objectStoreNames.contains('tracks')) d.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
-        if (!d.objectStoreNames.contains('playlists')) d.createObjectStore('playlists', { keyPath: 'id', autoIncrement: true });
-      };
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
+  /* ================= loading the library ================= */
+  function normalize(d) {
+    const file = d.file;
+    const base = file.split('/').pop();
+    const name = base.replace(/\.[^.]+$/, '');
+    const ext = (base.match(/\.([^.]+)$/) || [, ''])[1].toUpperCase();
+    return {
+      id: file, file, name,
+      title: clean(d.title) || name,
+      artist: clean(d.artist), album: clean(d.album),
+      year: clean(d.year), genre: clean(d.genre), trackNo: clean(d.track || d.trackNo),
+      duration: Number(d.duration) || 0,
+      size: Number(d.size) || 0,
+      format: clean(d.format) || ext,
+      cover: d.cover ? url(d.cover) : null,
+      needsTags: !(clean(d.artist) || clean(d.album) || d.cover)   // no metadata in songs.json -> read it from the file
+    };
+  }
+
+  function loadLibrary() {
+    fetch('songs.json', { cache: 'no-cache' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(data => {
+        songs = (Array.isArray(data) ? data : []).filter(d => d && d.file).map(normalize);
+        songs.forEach(s => map.set(s.id, s));
+        loaded = true; renderAll();
+        enrichMissing();
+      })
+      .catch(() => { loaded = true; loadError = true; renderAll(); });
+  }
+
+  /* ---- fallback: read tags straight from the hosted file when songs.json has none ---- */
+  function readTags(u) {
+    return new Promise(res => {
+      if (!window.jsmediatags) return res(null);
+      try { window.jsmediatags.read(abs(u), { onSuccess: t => res(t.tags || {}), onError: () => res({}) }); }
+      catch (e) { res({}); }
+      setTimeout(() => res({}), 8000);
     });
   }
-  const idb = (store, mode, fn) => new Promise((res, rej) => {
-    const tx = db.transaction(store, mode);
-    const req = fn(tx.objectStore(store));
-    tx.oncomplete = () => res(req && req.result);
-    tx.onerror = tx.onabort = () => rej(tx.error);
-  });
-  const saveTrack = t => (db && typeof t.id === 'number') ? idb('tracks', 'readwrite', s => s.put(t)).catch(() => {}) : Promise.resolve();
-  const savePlaylist = p => (db && typeof p.id === 'number') ? idb('playlists', 'readwrite', s => s.put(p)).catch(() => {}) : Promise.resolve();
-
-  /* ================= metadata ================= */
-  function getDuration(blob) {
+  function getDuration(u) {
     return new Promise(res => {
-      const a = new Audio(); const u = URL.createObjectURL(blob);
-      const done = d => { URL.revokeObjectURL(u); res(d || 0); };
-      a.preload = 'metadata';
+      const a = new Audio(); a.preload = 'metadata';
+      const done = d => res(d || 0);
       a.onloadedmetadata = () => done(a.duration);
       a.onerror = () => done(0);
-      setTimeout(() => done(0), 4000);
+      setTimeout(() => done(0), 5000);
       a.src = u;
     });
   }
-  function readTags(file) {
-    return new Promise(res => {
-      if (!window.jsmediatags) return res(null);          // library didn't load (offline)
-      try { window.jsmediatags.read(file, { onSuccess: t => res(t.tags || {}), onError: () => res({}) }); }
-      catch (e) { res({}); }
-      setTimeout(() => res({}), 6000);
-    });
-  }
-  function applyTags(rec, tags) {
-    tags = tags || {};
-    rec.title = clean(tags.title) || rec.name;
-    rec.artist = clean(tags.artist);
-    rec.album = clean(tags.album);
-    rec.year = clean(tags.year);
-    rec.genre = clean(tags.genre);
-    rec.trackNo = clean(tags.track);
-    const pic = tags.picture;
-    if (pic && pic.data) {
-      try { rec.cover = new Blob([new Uint8Array(pic.data)], { type: pic.format || 'image/jpeg' }); } catch (e) {}
+  let renderTimer;
+  const renderSoon = () => { clearTimeout(renderTimer); renderTimer = setTimeout(renderAll, 300); };
+  async function enrichOne(s) {
+    const tags = await readTags(url(s.file));
+    if (tags) {
+      if (clean(tags.title)) s.title = clean(tags.title);
+      s.artist = clean(tags.artist); s.album = clean(tags.album);
+      s.year = clean(tags.year); s.genre = clean(tags.genre); s.trackNo = clean(tags.track);
+      const pic = tags.picture;
+      if (pic && pic.data) {
+        try { s.cover = URL.createObjectURL(new Blob([new Uint8Array(pic.data)], { type: pic.format || 'image/jpeg' })); } catch (e) {}
+      }
     }
-    rec.metaDone = true;
+    if (!s.duration) s.duration = await getDuration(url(s.file));
+    s.needsTags = false;
+    renderSoon();
+  }
+  async function enrichMissing() {
+    const todo = songs.filter(s => s.needsTags);
+    let i = 0;
+    const worker = async () => { while (i < todo.length) await enrichOne(todo[i++]); };
+    await Promise.all([worker(), worker()]);
   }
 
-  /* ================= adding / removing songs ================= */
-  async function addFiles(fileList) {
-    msg('');
-    const files = [...fileList];
-    const skipped = files.filter(f => !isAudio(f)).length;
-    const good = files.filter(isAudio);
-    if (!good.length) { if (skipped) msg('Those files are not audio files.', true); return; }
-    const added = [];
-    let n = 0;
-    for (const f of good) {
-      msg('Reading ' + (++n) + ' of ' + good.length + ': ' + f.name);
-      const [duration, tags] = await Promise.all([getDuration(f), readTags(f)]);
-      const rec = { name: f.name.replace(/\.[^.]+$/, ''), type: f.type, size: f.size, blob: f, duration, added: Date.now(), cover: null };
-      applyTags(rec, tags);
-      if (!tags) rec.metaDone = false;                      // retry later if the tag library was unavailable
-      if (db) {
-        try { rec.id = await idb('tracks', 'readwrite', s => s.add(rec)); }
-        catch (e) { rec.id = 'm' + memId++; msg('Could not save to browser storage. Songs will be lost on refresh.', true); }
-      } else rec.id = 'm' + memId++;
-      tracks.push(rec); added.push(rec);
-    }
-    const p = playlists.find(p => p.id === view);
-    if (p) { added.forEach(t => { if (!p.trackIds.includes(t.id)) p.trackIds.push(t.id); }); savePlaylist(p); }
-    if (!$('msg').classList.contains('err')) msg(skipped ? 'Added ' + added.length + '. Skipped ' + skipped + ' non-audio file(s).' : '');
-    renderAll();
-    if (curId == null && added.length) playTrack(added[0].id, viewList().map(t => t.id));
+  /* ================= playlists (saved in this browser) ================= */
+  function loadPlaylists() {
+    try { playlists = JSON.parse(localStorage.getItem(PL_KEY)) || []; } catch (e) { playlists = []; }
   }
-
-  async function removeTrack(id) {
-    const t = byId(id); if (!t) return;
-    if (db && typeof id === 'number') { try { await idb('tracks', 'readwrite', s => s.delete(id)); } catch (e) {} }
-    for (const p of playlists) {
-      if (p.trackIds.includes(id)) { p.trackIds = p.trackIds.filter(x => x !== id); savePlaylist(p); }
-    }
-    if (coverUrls.has(id)) { URL.revokeObjectURL(coverUrls.get(id)); coverUrls.delete(id); }
-    colorCache.delete(id);
-    tracks = tracks.filter(x => x.id !== id);
-    queue = queue.filter(x => x !== id);
-    history = history.filter(x => x !== id);
-    if (curId === id) { audio.pause(); audio.removeAttribute('src'); audio.load(); curId = null; }
-    renderAll();
+  function savePlaylists() {
+    try { localStorage.setItem(PL_KEY, JSON.stringify(playlists)); }
+    catch (e) { msg('Could not save playlists in this browser (storage is blocked).', true); }
   }
-
-  /* ================= playlists ================= */
-  async function createPlaylist(name) {
-    const p = { name, trackIds: [] };
-    if (db) { try { p.id = await idb('playlists', 'readwrite', s => s.add(p)); } catch (e) { p.id = 'p' + memId++; } }
-    else p.id = 'p' + memId++;
-    playlists.push(p);
-    return p;
+  function createPlaylist(name) {
+    const p = { id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), name, trackIds: [] };
+    playlists.push(p); savePlaylists(); return p;
   }
-  function addToPlaylist(p, tid) { if (!p.trackIds.includes(tid)) { p.trackIds.push(tid); savePlaylist(p); } }
-  function removeFromPlaylist(p, tid) { p.trackIds = p.trackIds.filter(x => x !== tid); savePlaylist(p); }
-  async function deletePlaylist(p) {
-    if (db && typeof p.id === 'number') { try { await idb('playlists', 'readwrite', s => s.delete(p.id)); } catch (e) {} }
-    playlists = playlists.filter(x => x !== p);
+  function addToPlaylist(p, tid) { if (!p.trackIds.includes(tid)) { p.trackIds.push(tid); savePlaylists(); } }
+  function removeFromPlaylist(p, tid) { p.trackIds = p.trackIds.filter(x => x !== tid); savePlaylists(); }
+  function deletePlaylist(p) {
+    playlists = playlists.filter(x => x !== p); savePlaylists();
     if (view === p.id) view = 'library';
     renderAll();
   }
@@ -489,12 +455,12 @@
   function showInfo(t) {
     const art = document.createElement('div'); art.className = 'thumb info-art'; fillThumb(art, t);
     const dl = document.createElement('dl'); dl.className = 'info';
-    const rows = [
+    [
       ['Title', titleOf(t)], ['Artist', t.artist || '—'], ['Album', t.album || '—'],
       ['Year', t.year || '—'], ['Genre', t.genre || '—'], ['Track #', t.trackNo || '—'],
-      ['Length', fmt(t.duration)], ['File', t.name], ['Format', t.type || '—'], ['Size', sizeMB(t.size)]
-    ];
-    rows.forEach(([k, v]) => {
+      ['Length', t.duration ? fmt(t.duration) : '—'], ['File', t.file], ['Format', t.format || '—'],
+      ['Size', t.size ? sizeMB(t.size) : '—']
+    ].forEach(([k, v]) => {
       const dt = document.createElement('dt'); dt.textContent = k;
       const dd = document.createElement('dd'); dd.textContent = v;
       dl.append(dt, dd);
@@ -507,8 +473,8 @@
   const menu = $('menu');
   let menuBtn = null;
   function closeMenu() { menu.style.display = 'none'; if (menuBtn) menuBtn.classList.remove('open'); menuBtn = null; }
-  function mItem(label, fn, cls) {
-    const d = document.createElement('div'); d.className = 'mi' + (cls ? ' ' + cls : ''); d.textContent = label;
+  function mItem(label, fn) {
+    const d = document.createElement('div'); d.className = 'mi'; d.textContent = label;
     d.onclick = () => { closeMenu(); fn(); };
     menu.appendChild(d);
   }
@@ -528,11 +494,10 @@
     });
     mItem('✚ New playlist…', async () => {
       const name = await askName('New playlist');
-      if (name) { const p = await createPlaylist(name); addToPlaylist(p, t.id); renderAll(); }
+      if (name) { const p = createPlaylist(name); addToPlaylist(p, t.id); renderAll(); }
     });
     mSep();
     mItem('Song info', () => showInfo(t));
-    mItem('Remove from library', () => removeTrack(t.id), 'danger');
 
     menu.style.display = 'block';
     const r = btn.getBoundingClientRect();
@@ -548,14 +513,14 @@
 
   /* ================= views / rendering ================= */
   function baseList() {
-    if (view === 'library') return tracks.slice();
+    if (view === 'library') return songs.slice();
     const p = playlists.find(p => p.id === view);
     return p ? p.trackIds.map(byId).filter(Boolean) : [];
   }
   function viewList() {
     let list = baseList();
     const q = $('search').value.trim().toLowerCase();
-    if (q) list = list.filter(t => (titleOf(t) + ' ' + artistOf(t) + ' ' + (t.album || '')).toLowerCase().includes(q));
+    if (q) list = list.filter(t => (titleOf(t) + ' ' + artistOf(t) + ' ' + (t.album || '') + ' ' + (t.genre || '')).toLowerCase().includes(q));
     if (sortKey) {
       const val = t => sortKey === 'duration' ? (t.duration || 0) : sortKey === 'title' ? titleOf(t).toLowerCase() : (t.album || '').toLowerCase();
       list.sort((a, b) => { const x = val(a), y = val(b); return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
@@ -591,10 +556,11 @@
     $('heroTitle').textContent = pl ? pl.name : 'Your Library';
     const secs = base.reduce((s, t) => s + (t.duration || 0), 0);
     const mins = Math.round(secs / 60);
-    $('count').textContent = plural(base.length, 'song') + (base.length ? ' · ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') : '');
+    $('count').textContent = !loaded ? 'Loading…'
+      : plural(base.length, 'song') + (base.length && mins ? ' · ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') : '');
     const art = $('heroArt'); art.innerHTML = ''; art.removeAttribute('style');
     const withCover = base.find(t => t.cover);
-    if (withCover) { const img = document.createElement('img'); img.src = coverUrl(withCover); img.alt = ''; art.appendChild(img); }
+    if (withCover) { const img = document.createElement('img'); img.src = withCover.cover; img.alt = ''; art.appendChild(img); }
     else art.textContent = pl ? '🎵' : '🎧';
 
     $('renamePl').hidden = !pl; $('deletePl').hidden = !pl;
@@ -625,7 +591,7 @@
       txt.append(tt, sb); tc.append(th, txt);
 
       const alb = document.createElement('div'); alb.className = 'alb'; alb.textContent = t.album || '—';
-      const d = document.createElement('div'); d.className = 'dur'; d.textContent = fmt(t.duration);
+      const d = document.createElement('div'); d.className = 'dur'; d.textContent = t.duration ? fmt(t.duration) : '';
       const dots = document.createElement('button'); dots.className = 'dots'; dots.title = 'More'; dots.textContent = '⋯';
       dots.onclick = e => { e.stopPropagation(); openMenu(dots, t); };
 
@@ -638,9 +604,11 @@
     if (list.length) empty.style.display = 'none';
     else {
       empty.style.display = 'block';
-      if ($('search').value.trim()) empty.innerHTML = '<h2>No matches</h2><p>Try a different search.</p>';
-      else if (pl) empty.innerHTML = '<h2>This playlist is empty</h2><p>Click the ⋯ button on any song in Your Library and choose a playlist,<br>or click <b>Add songs</b> to add new files straight into this playlist.</p>';
-      else empty.innerHTML = '<h2>No songs yet</h2><p>Click <b>Add songs</b> or drag audio files anywhere on this page.</p>';
+      if (!loaded) empty.innerHTML = '<h2>Loading your library…</h2>';
+      else if (loadError) empty.innerHTML = '<h2>Could not load songs.json</h2><p>Make sure you ran <code>generate_songs.py</code>, uploaded <code>songs.json</code> next to <code>index.html</code>,<br>and that you are opening the page from the website (or <code>python -m http.server</code>), not by double-clicking the file.</p>';
+      else if ($('search').value.trim()) empty.innerHTML = '<h2>No matches</h2><p>Try a different search.</p>';
+      else if (pl) empty.innerHTML = '<h2>This playlist is empty</h2><p>Click the ⋯ button on any song in Your Library and choose this playlist.</p>';
+      else empty.innerHTML = '<h2>No songs found</h2><p>Put your audio files in the <code>songs</code> folder and run <code>generate_songs.py</code>.</p>';
     }
 
     // big play button state
@@ -651,7 +619,7 @@
   function updateBar() {
     const t = byId(curId);
     $('npName').textContent = t ? titleOf(t) : 'Nothing playing';
-    $('npSub').textContent = t ? (artistOf(t) + (t.album ? ' • ' + t.album : '')) : 'Add some songs';
+    $('npSub').textContent = t ? (artistOf(t) + (t.album ? ' • ' + t.album : '')) : 'Pick a song';
     fillThumb($('npThumb'), t);
     document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'My Music';
     $('play').textContent = audio.paused ? '▶' : '⏸';
@@ -667,7 +635,7 @@
     npOpen = true;
     setNpBottom();
     npPage.classList.add('open');
-    try { history.pushState({ np: true }, ''); } catch (e) {}   // so the browser/phone Back button closes the page
+    try { window.history.pushState({ np: true }, ''); } catch (e) {}   // so the browser/phone Back button closes the page
     renderNP();
     npPage.scrollTop = 0;
   }
@@ -675,7 +643,7 @@
     if (!npOpen) return;
     npOpen = false;
     npPage.classList.remove('open');
-    if (!fromPop) { try { if (history.state && history.state.np) history.back(); } catch (e) {} }
+    if (!fromPop) { try { if (window.history.state && window.history.state.np) window.history.back(); } catch (e) {} }
   }
   window.addEventListener('popstate', () => { if (npOpen) closeNP(true); });
   window.addEventListener('resize', () => { if (npOpen) setNpBottom(); });
@@ -684,8 +652,7 @@
     const apply = c => { npPage.style.background = `linear-gradient(180deg, ${c} 0%, #121212 90%)`; };
     if (colorCache.has(t.id)) return apply(colorCache.get(t.id));
     apply(`hsl(${hue(titleOf(t))},45%,28%)`);
-    const u = coverUrl(t);
-    if (!u) return;
+    if (!t.cover) return;
     const img = new Image();
     img.onload = () => {
       try {
@@ -700,7 +667,7 @@
         if (npOpen && curId === t.id) apply(col);
       } catch (e) {}
     };
-    img.src = u;
+    img.src = t.cover;
   }
 
   function renderNP() {
@@ -717,8 +684,8 @@
       t.album, t.year, t.genre,
       t.trackNo ? 'Track ' + t.trackNo : '',
       t.duration ? fmt(t.duration) : '',
-      (t.type || '').replace('audio/', '').replace('x-', '').toUpperCase(),
-      sizeMB(t.size)
+      t.format,
+      t.size ? sizeMB(t.size) : ''
     ].filter(Boolean).forEach(v => { const s = document.createElement('span'); s.textContent = v; meta.appendChild(s); });
 
     setNpBackground(t);
@@ -747,24 +714,20 @@
   }
 
   /* ================= playback ================= */
-  function playTrack(id, newQueue, fromHistory) {
+  function playTrack(id, newQueue, fromPlayed) {
     const t = byId(id); if (!t) return;
-    if (newQueue) { queue = newQueue.slice(); }
+    if (newQueue) queue = newQueue.slice();
     else if (!queue.includes(id)) queue = [id];
-    if (!fromHistory && curId != null && curId !== id) history.push(curId);
+    if (!fromPlayed && curId != null && curId !== id) played.push(curId);
     curId = id;
     msg('');
-    if (currentUrl) URL.revokeObjectURL(currentUrl);
-    currentUrl = URL.createObjectURL(t.blob);
-    retried.delete(id);
-    audio.src = currentUrl;
+    audio.src = url(t.file);
     audio.play().catch(e => { if (e.name !== 'AbortError') msg('Press play to start (' + e.name + ').', true); });
     renderAll();
     if ('mediaSession' in navigator) {
-      const u = coverUrl(t);
       navigator.mediaSession.metadata = new MediaMetadata({
         title: titleOf(t), artist: t.artist || '', album: t.album || '',
-        artwork: u ? [{ src: u, sizes: '512x512', type: (t.cover && t.cover.type) || 'image/jpeg' }] : []
+        artwork: t.cover ? [{ src: abs(t.cover), sizes: '512x512' }] : []
       });
     }
   }
@@ -786,9 +749,8 @@
     playTrack(n);
   }
   function prev() {
-    if (!queue.length && !tracks.length) return;
     if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-    if (history.length) return playTrack(history.pop(), null, true);
+    if (played.length) return playTrack(played.pop(), null, true);
     const i = queue.indexOf(curId);
     if (i > 0) playTrack(queue[i - 1], null, true); else audio.currentTime = 0;
   }
@@ -816,7 +778,7 @@
   audio.addEventListener('loadedmetadata', () => {
     $('dur').textContent = fmt(audio.duration);
     const t = byId(curId);
-    if (t && !t.duration && isFinite(audio.duration)) { t.duration = audio.duration; saveTrack(t); renderMain(); }
+    if (t && !t.duration && isFinite(audio.duration)) { t.duration = audio.duration; renderMain(); }
   });
   audio.addEventListener('timeupdate', () => {
     $('cur').textContent = fmt(audio.currentTime);
@@ -824,36 +786,25 @@
   });
   audio.addEventListener('error', () => {
     const t = byId(curId); if (!t) return;
-    if (!retried.has(t.id)) {            // fallback: some environments block blob: URLs
-      retried.add(t.id);
-      const r = new FileReader();
-      r.onload = () => { audio.src = r.result; audio.play().catch(() => {}); };
-      r.readAsDataURL(t.blob);
-      return;
-    }
-    msg(audio.canPlayType(t.type)
-      ? 'Could not load "' + titleOf(t) + '". Try opening this page in Chrome, Firefox or Safari.'
-      : 'Your browser cannot play this format (' + (t.type || 'unknown') + '). Try mp3 or wav.', true);
+    msg('Could not load "' + titleOf(t) + '". Check that "' + t.file + '" exists in your repo and the name matches exactly.', true);
   });
 
   /* ================= wiring ================= */
-  $('addBtn').onclick = () => $('files').click();
-  $('files').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
   $('navLib').onclick = () => setView('library');
   $('newPl').onclick = async () => {
     const name = await askName('New playlist');
-    if (name) { const p = await createPlaylist(name); setView(p.id); }
+    if (name) { const p = createPlaylist(name); setView(p.id); }
   };
   $('renamePl').onclick = async () => {
     const p = playlists.find(p => p.id === view); if (!p) return;
     const name = await askName('Rename playlist', p.name);
-    if (name) { p.name = name; savePlaylist(p); renderAll(); }
+    if (name) { p.name = name; savePlaylists(); renderAll(); }
   };
   $('deletePl').onclick = () => {
     const p = playlists.find(p => p.id === view); if (!p) return;
     const note = document.createElement('p');
     note.style.cssText = 'color:#b3b3b3;margin:0';
-    note.textContent = 'This removes the playlist only. Your songs stay in your library.';
+    note.textContent = 'This removes the playlist only. The songs stay in the library.';
     openDialog('Delete "' + p.name + '"?', [note],
       [{ label: 'Cancel' }, { label: 'Delete', cls: 'danger', fn: () => deletePlaylist(p) }]);
   };
@@ -904,34 +855,10 @@
     navigator.mediaSession.setActionHandler('previoustrack', prev);
   }
 
-  // drag & drop files anywhere
-  const main = $('main');
-  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); main.classList.add('dragover'); }));
-  document.addEventListener('dragleave', e => { if (e.target === document.documentElement) main.classList.remove('dragover'); });
-  document.addEventListener('drop', e => {
-    e.preventDefault(); main.classList.remove('dragover');
-    if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
-  });
-
   /* ================= init ================= */
+  loadPlaylists();
   renderAll();
-  openDB().then(async d => {
-    db = d;
-    tracks = (await idb('tracks', 'readonly', s => s.getAll())) || [];
-    playlists = (await idb('playlists', 'readonly', s => s.getAll())) || [];
-    renderAll();
-    // songs saved by the older version have no tags yet: read them now
-    for (const t of tracks.filter(t => !t.metaDone)) {
-      const tags = await readTags(t.blob);
-      if (tags === null) break;                       // tag library unavailable, try again next time
-      t.name = t.name || 'Untitled';
-      applyTags(t, tags);
-      await saveTrack(t);
-    }
-    renderAll();
-  }).catch(() => {
-    msg('Browser storage is unavailable here, so songs and playlists will not be saved after you close the page.', true);
-  });
+  loadLibrary();
 })();
 </script>
 </body>
