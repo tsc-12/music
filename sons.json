@@ -1,0 +1,20 @@
+[
+  {
+    "file": "songs/gbgr/All Girls Are The Same.m4a",
+    "title": "All Girls Are The Same",
+    "artist": "Juice WRLD",
+    "album": "Goodbye & Good Riddance",
+    "year": "2018",
+    "genre": "Hip-Hop",
+    "cover": "covers/gbgr.jpg"
+  },
+  {
+    "file": "songs/gbgr/I'll Be Fine.m4a",
+    "title": "I'll Be Fine",
+    "artist": "Juice WRLD",
+    "album": "Goodbye & Good Riddance",
+    "year": "2018",
+    "genre": "Hip-Hop",
+    "cover": "covers/gbgr.jpg"
+  }
+]
