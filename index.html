@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Music</title>
+<title>VibeX</title>
 <!-- Reads song tags (title, artist, album, cover art). The player still works without it, using file names. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <style>
@@ -182,7 +182,8 @@
   @media (max-width: 800px) {
     body { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
     .sidebar { flex-direction: row; align-items: center; overflow-x: auto; padding: 10px; gap: 8px; }
-    .logo, .side-note, .pl-head span, .pl-none { display: none; }
+    .side-note, .pl-head span, .pl-none { display: none; }
+    .logo { flex-shrink: 0; padding: 0; font-size: 1.1rem; }
     .pl-head { border: none; padding: 0; }
     .pl-list { display: flex; gap: 8px; overflow: visible; flex: none; }
     .nav-item, .pl-item { white-space: nowrap; background: #242424; flex-shrink: 0; }
@@ -234,14 +235,24 @@
     .eq-wrap { width: 26px; }
     .eq-db, .eq-hz { font-size: .6rem; }
   }
+
+  /* ---------- Settings gear icon ---------- */
+  .icon-btn { margin-left: auto; background: none; border: none; color: var(--muted); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+  .icon-btn:hover { color: #fff; background: var(--hover); }
+  .icon-btn svg { transition: transform .35s; }
+  .icon-btn:hover svg { transform: rotate(60deg); }
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
-  <div class="logo"><span>♪</span> My Music</div>
+  <div class="logo">
+    <span>♪</span> <b class="brand">VibeX</b>
+    <button class="icon-btn" id="navSettings" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
   <div class="nav-item active" id="navLib">🏠 Your Library</div>
-  <div class="nav-item" id="navSettings">⚙️ Settings</div>
   <button class="add-btn" id="addBtn">＋ Add songs</button>
   <input type="file" id="files" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.opus" multiple hidden>
   <div class="pl-head"><span>Playlists</span><button id="newPl" title="Create playlist">＋</button></div>
@@ -722,7 +733,7 @@
     $('npName').textContent = t ? titleOf(t) : 'Nothing playing';
     $('npSub').textContent = t ? (artistOf(t) + (t.album ? ' • ' + t.album : '')) : 'Add some songs';
     fillThumb($('npThumb'), t);
-    document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'My Music';
+    document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'VibeX';
     $('play').textContent = audio.paused ? '▶' : '⏸';
     renderNP();
   }
