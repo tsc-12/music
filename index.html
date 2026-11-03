@@ -323,6 +323,28 @@
     .top-home { width: 42px; height: 42px; }
     .gs-wrap { height: 42px; }
   }
+
+  /* ---------- Queue ---------- */
+  .card-more {
+    position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,.6); color: #fff; font-size: 1.1rem; cursor: pointer; display: grid; place-items: center;
+    opacity: 0; transition: opacity .2s;
+  }
+  .card:hover .card-more, .card-more.open, .card-more:focus-visible { opacity: 1; }
+  .card-more:hover { background: rgba(0,0,0,.85); }
+  @media (hover: none) { .card-more { opacity: 1; } }
+  #npQueueBox { margin-bottom: 22px; }
+  .np-qhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .np-qhead h3 { margin: 0; }
+  .np-x { background: none; border: none; color: #fff; opacity: .6; font-size: 1rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; }
+  .np-x:hover { opacity: 1; background: rgba(255,255,255,.15); }
+  #qBtn { font-size: 1rem; }
+  #toast {
+    position: fixed; left: 50%; bottom: 110px; transform: translate(-50%, 10px); background: #fff; color: #000;
+    font-weight: 700; font-size: .88rem; padding: 10px 18px; border-radius: 500px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; max-width: 90vw; text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 </head>
 <body>
@@ -378,6 +400,7 @@
 
     <div class="toolbar">
       <button class="big-play" id="bigPlay" title="Play">▶</button>
+      <button class="pill" id="queueAll" title="Add everything shown here to your queue">＋ Add to queue</button>
       <button class="pill" id="renamePl" hidden>Rename</button>
       <button class="pill danger" id="deletePl" hidden>Delete playlist</button>
       <input class="search" id="search" type="search" placeholder="Search title, artist, album">
@@ -411,6 +434,10 @@
       <div class="np-meta" id="npMeta"></div>
     </div>
     <div class="np-next">
+      <div id="npQueueBox" hidden>
+        <div class="np-qhead"><h3>Your queue</h3><button class="pill" id="qClear">Clear</button></div>
+        <div id="npQueueList"></div>
+      </div>
       <h3 id="npNextHead">Up next</h3>
       <div id="npNextList"></div>
     </div>
@@ -442,12 +469,14 @@
   </div>
 
   <div class="right">
+    <button class="ctl" id="qBtn" title="Queue">☰</button>
     <button class="ctl" id="mute" title="Mute">🔊</button>
     <input type="range" id="vol" min="0" max="100" value="80">
   </div>
 </footer>
 
 <div id="menu"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <dialog id="dlg"><div id="dlgBody"></div><div class="dlg-actions" id="dlgActions"></div></dialog>
 
 <!-- Settings window -->
@@ -499,7 +528,9 @@
   let view = 'home';          // 'home', 'library', 'search', or a playlist id
   let ready = false;          // true once saved songs have been loaded
   let sortKey = '', sortDir = 1;
-  let queue = [];             // track ids currently being played through
+  let queue = [];             // the list of song ids the current page/album/playlist is playing through
+  let userQueue = [];         // songs you added with "Play next" / "Add to queue" (they play before the rest of `queue`)
+  let ctxId = null;           // where we are inside `queue` (so queued songs don't lose your place)
   let curId = null;
   let shuffleOn = false, repeatMode = 0;   // repeat: 0 off, 1 all, 2 one
   let history = [];
@@ -531,6 +562,13 @@
   const isAudio = f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|opus|weba)$/i.test(f.name);
   const msg = (t, err) => { const m = $('msg'); m.textContent = t || ''; m.className = err ? 'err' : ''; };
   const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+  let toastTimer = null;
+  function toast(text) {
+    const el = $('toast'); el.textContent = text; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
 
   function coverUrl(t) {
     if (!t || !t.cover) return null;
@@ -641,6 +679,7 @@
     colorCache.delete(id);
     tracks = tracks.filter(x => x.id !== id);
     queue = queue.filter(x => x !== id);
+    userQueue = userQueue.filter(x => x !== id);
     history = history.filter(x => x !== id);
     if (curId === id) { audio.pause(); audio.removeAttribute('src'); audio.load(); curId = null; }
     renderAll();
@@ -717,10 +756,25 @@
   const mLabel = t => { const d = document.createElement('div'); d.className = 'ml'; d.textContent = t; menu.appendChild(d); };
   const mSep = () => menu.appendChild(document.createElement('hr'));
 
+  function placeMenu(btn) {
+    menu.style.display = 'block';
+    const r = btn.getBoundingClientRect();
+    const mw = menu.offsetWidth, mh = menu.offsetHeight;
+    let left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8));
+    let top = r.bottom + 4;
+    if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+    menu.style.left = left + 'px'; menu.style.top = top + 'px';
+    btn.classList.add('open'); menuBtn = btn;
+  }
+
+  // menu for one song
   function openMenu(btn, t) {
     if (menuBtn === btn) return closeMenu();
     closeMenu();
     menu.innerHTML = '';
+    mItem('Play next', () => queueSongs([t.id], true));
+    mItem('Add to queue', () => queueSongs([t.id], false));
+    mSep();
     const curPl = playlists.find(p => p.id === view);
     if (curPl) { mItem('Remove from this playlist', () => { removeFromPlaylist(curPl, t.id); renderAll(); }); mSep(); }
     mLabel('Add to playlist');
@@ -735,18 +789,45 @@
     mSep();
     mItem('Song info', () => showInfo(t));
     mItem('Remove from library', () => removeTrack(t.id), 'danger');
-
-    menu.style.display = 'block';
-    const r = btn.getBoundingClientRect();
-    const mw = menu.offsetWidth, mh = menu.offsetHeight;
-    let left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8));
-    let top = r.bottom + 4;
-    if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 4);
-    menu.style.left = left + 'px'; menu.style.top = top + 'px';
-    btn.classList.add('open'); menuBtn = btn;
+    placeMenu(btn);
   }
-  document.addEventListener('click', e => { if (!e.target.closest('#menu') && !e.target.closest('.dots')) closeMenu(); });
+
+  // menu for a whole album / artist / playlist
+  function openListMenu(btn, list, name) {
+    if (menuBtn === btn) return closeMenu();
+    closeMenu();
+    menu.innerHTML = '';
+    const ids = list.map(t => t.id);
+    mLabel(name);
+    mItem('Play', () => playList(list));
+    mItem('Play next', () => queueSongs(ids, true));
+    mItem('Add to queue', () => queueSongs(ids, false));
+    placeMenu(btn);
+  }
+  document.addEventListener('click', e => { if (!e.target.closest('#menu') && !e.target.closest('.dots') && !e.target.closest('.card-more')) closeMenu(); });
   $('main').addEventListener('scroll', closeMenu);
+
+  /* ================= queue ================= */
+  function updateQBadge() { $('qBtn').textContent = userQueue.length ? '☰ ' + userQueue.length : '☰'; }
+  function refreshQueueUI() { updateQBadge(); renderNP(); }
+
+  // atFront = true  -> "Play next"   (goes before anything already queued)
+  // atFront = false -> "Add to queue" (goes after what you already queued)
+  function queueSongs(ids, atFront) {
+    ids = ids.filter(id => byId(id));
+    if (!ids.length) return;
+    if (curId == null) {                       // nothing is playing yet: just start playing
+      playTrack(ids[0], ids);
+      toast('Playing ' + plural(ids.length, 'song'));
+      return;
+    }
+    if (atFront) userQueue.unshift(...ids); else userQueue.push(...ids);
+    refreshQueueUI();
+    toast(ids.length === 1
+      ? (atFront ? 'Will play next' : 'Added to queue')
+      : plural(ids.length, 'song') + (atFront ? ' will play next' : ' added to queue'));
+  }
+  function clearQueue() { userQueue = []; refreshQueueUI(); toast('Queue cleared'); }
 
   /* ================= views / rendering ================= */
   function baseList() {
@@ -897,10 +978,17 @@
       .sort((a, b) => b.list.length - a.list.length || a.name.localeCompare(b.name));
   }
 
-  function card({ art, title, sub, onOpen, onPlay }) {
+  // menu(btn) = optional: called when the little ⋯ button on the card is clicked
+  function card({ art, title, sub, onOpen, onPlay, menu: onMenu }) {
     const c = document.createElement('div'); c.className = 'card';
     const cover = document.createElement('div'); cover.className = 'card-cover';
     cover.appendChild(art);
+    if (onMenu) {
+      const mb = document.createElement('button'); mb.className = 'card-more'; mb.textContent = '⋯'; mb.title = 'More (queue)';
+      mb.setAttribute('aria-label', 'More options');
+      mb.onclick = e => { e.stopPropagation(); onMenu(mb); };
+      cover.appendChild(mb);
+    }
     const pb = document.createElement('button'); pb.className = 'card-play'; pb.textContent = '▶'; pb.title = 'Play';
     pb.onclick = e => { e.stopPropagation(); onPlay(); };
     cover.appendChild(pb);
@@ -973,7 +1061,8 @@
       return card({
         art: makeArt('card-art', [t], titleOf(t)),
         title: titleOf(t), sub: artistOf(t),
-        onOpen: () => playTrack(t.id, ids), onPlay: () => playTrack(t.id, ids)
+        onOpen: () => playTrack(t.id, ids), onPlay: () => playTrack(t.id, ids),
+        menu: b => openMenu(b, t)
       });
     };
 
@@ -989,7 +1078,8 @@
         return card({
           art: makeArt('card-art', list, p.name, '🎵'),
           title: p.name, sub: 'Playlist • ' + plural(list.length, 'song'),
-          onOpen: () => setView(p.id), onPlay: () => playList(list)
+          onOpen: () => setView(p.id), onPlay: () => playList(list),
+          menu: b => openListMenu(b, list, p.name)
         });
       })));
     }
@@ -999,7 +1089,8 @@
       shelves.appendChild(shelf('Artists', artists.map(a => card({
         art: makeArt('card-art round', a.list, a.name),
         title: a.name, sub: 'Artist',
-        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list),
+        menu: b => openListMenu(b, a.list, a.name)
       }))));
     }
 
@@ -1008,7 +1099,8 @@
       shelves.appendChild(shelf('Albums', albums.map(a => card({
         art: makeArt('card-art', a.list, a.name),
         title: a.name, sub: artistOf(a.list[0]),
-        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list),
+        menu: b => openListMenu(b, a.list, a.name)
       }))));
     }
 
@@ -1023,6 +1115,7 @@
     fillThumb($('npThumb'), t);
     document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'VibeX';
     $('play').textContent = audio.paused ? '▶' : '⏸';
+    updateQBadge();
     renderNP();
   }
   // skipHome = don't rebuild the Home page (keeps its shelves from jumping around while you play songs)
@@ -1091,14 +1184,16 @@
       box.appendChild(shelf('Artists', artists.map(a => card({
         art: makeArt('card-art round', a.list, a.name),
         title: a.name, sub: 'Artist',
-        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list),
+        menu: b => openListMenu(b, a.list, a.name)
       }))));
     }
     if (albums.length) {
       box.appendChild(shelf('Albums', albums.map(a => card({
         art: makeArt('card-art', a.list, a.name),
         title: a.name, sub: artistOf(a.list[0]),
-        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list),
+        menu: b => openListMenu(b, a.list, a.name)
       }))));
     }
     if (pls.length) {
@@ -1107,7 +1202,8 @@
         return card({
           art: makeArt('card-art', list, p.name, '🎵'),
           title: p.name, sub: 'Playlist • ' + plural(list.length, 'song'),
-          onOpen: () => setView(p.id), onPlay: () => playList(list)
+          onOpen: () => setView(p.id), onPlay: () => playList(list),
+          menu: b => openListMenu(b, list, p.name)
         });
       })));
     }
@@ -1196,10 +1292,29 @@
 
     setNpBackground(t);
 
-    // up next
+    // your queue (songs added with Play next / Add to queue)
+    const qBox = $('npQueueBox'), qList = $('npQueueList'); qList.innerHTML = '';
+    qBox.hidden = !userQueue.length;
+    userQueue.forEach((id, idx) => {
+      const u = byId(id); if (!u) return;
+      const row = document.createElement('div'); row.className = 'np-row';
+      const th = document.createElement('div'); th.className = 'thumb'; fillThumb(th, u);
+      const who = document.createElement('div'); who.className = 'who';
+      const tt = document.createElement('div'); tt.className = 't'; tt.textContent = titleOf(u);
+      const aa = document.createElement('div'); aa.className = 'a'; aa.textContent = artistOf(u);
+      who.append(tt, aa);
+      const d = document.createElement('div'); d.className = 'd'; d.textContent = u.duration ? fmt(u.duration) : '';
+      const rm = document.createElement('button'); rm.className = 'np-x'; rm.textContent = '✕'; rm.title = 'Remove from queue';
+      rm.onclick = e => { e.stopPropagation(); userQueue.splice(idx, 1); refreshQueueUI(); };
+      row.append(th, who, d, rm);
+      row.onclick = () => { userQueue.splice(0, idx + 1); playTrack(id, null, false, true); };   // jump to it, skipping the ones before
+      qList.appendChild(row);
+    });
+
+    // up next (the rest of the album / playlist / library you are playing)
     const list = $('npNextList'); list.innerHTML = '';
-    $('npNextHead').textContent = shuffleOn ? 'Queue (shuffle is on)' : 'Up next';
-    const i = queue.indexOf(curId);
+    $('npNextHead').textContent = shuffleOn ? 'Up next (shuffle is on)' : 'Up next';
+    const i = queue.indexOf(ctxId);
     const upcoming = (i === -1 ? [] : queue.slice(i + 1)).map(byId).filter(Boolean).slice(0, 10);
     if (!upcoming.length) {
       const d = document.createElement('div'); d.className = 'np-none'; d.textContent = 'Nothing else in the queue.';
@@ -1220,12 +1335,14 @@
   }
 
   /* ================= playback ================= */
-  function playTrack(id, newQueue, fromHistory) {
+  // fromQueue = this song came from your queue, so don't touch the album/playlist you were playing
+  function playTrack(id, newQueue, fromHistory, fromQueue) {
     const t = byId(id); if (!t) return;
     if (newQueue) { queue = newQueue.slice(); }
-    else if (!queue.includes(id)) queue = [id];
+    else if (!fromQueue && !fromHistory && !queue.includes(id)) queue = [id];
     if (!fromHistory && curId != null && curId !== id) history.push(curId);
     curId = id;
+    if (!fromQueue && queue.includes(id)) ctxId = id;
     pushRecent(id);
     msg('');
     if (currentUrl) URL.revokeObjectURL(currentUrl);
@@ -1249,11 +1366,18 @@
       let n; do { n = queue[Math.floor(Math.random() * queue.length)]; } while (n === curId);
       return n;
     }
-    const i = queue.indexOf(curId);
+    const i = queue.indexOf(ctxId);
     if (i + 1 >= queue.length) return (repeatMode === 1 || !auto) ? queue[0] : null;
     return queue[i + 1];
   }
   function next(auto) {
+    // songs you queued always play first (unless repeat-one is replaying the current song)
+    if (!(repeatMode === 2 && auto)) {
+      while (userQueue.length) {
+        const n = userQueue.shift();
+        if (byId(n)) { playTrack(n, null, false, true); return; }
+      }
+    }
     const n = pickNext(auto);
     if (n == null) { audio.pause(); audio.currentTime = 0; return; }
     if (n === curId) { audio.currentTime = 0; audio.play(); return; }
@@ -1342,6 +1466,15 @@
       renderMain();
     };
   });
+
+  // queue buttons
+  $('queueAll').onclick = () => queueSongs(viewList().map(t => t.id), false);
+  $('qClear').onclick = clearQueue;
+  $('qBtn').onclick = () => {
+    if (npOpen) closeNP();
+    else if (curId == null) toast('Play a song first, then add songs to your queue');
+    else openNP();
+  };
 
   // Now Playing page open/close
   $('npBack').onclick = () => closeNP();
@@ -1530,6 +1663,12 @@
   /* ================= update log ================= */
   // Add new releases at the TOP of this list.
   const CHANGELOG = [
+    { v: '1.5', date: 'Nov 2026', notes: [
+      'Added Play next and Add to queue for songs (⋯ menu), and for albums, artists, and playlists (⋯ on their cards)',
+      'Added an Add to queue button on the Library and playlist pages',
+      'Your queue now shows on the Now Playing page, where you can remove songs or clear it',
+      'Added a queue button next to the volume control that shows how many songs are queued'
+    ]},
     { v: '1.4', date: 'Nov 2026', notes: [
       'Added a search bar at the top that searches songs, artists, albums, and playlists'
     ]},
