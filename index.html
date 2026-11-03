@@ -68,7 +68,7 @@
   .search:focus { border-color: #fff; }
 
   .list { padding: 0 16px 24px; }
-  .head, .row { display: grid; grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1.3fr) 64px 36px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 4px; }
+  .head, .row { display: grid; grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1.3fr) 36px 64px 36px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 4px; }
   .head { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid #2a2a2a; margin: 0 0 8px; border-radius: 0; user-select: none; }
   .head [data-sort] { cursor: pointer; }
   .head [data-sort]:hover { color: #fff; }
@@ -83,9 +83,10 @@
   .row .sub { font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row .alb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .85rem; }
   .row.active .t, .row.active .num { color: var(--green); }
-  .row .dots { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; opacity: 0; border-radius: 50%; width: 30px; height: 30px; }
-  .row:hover .dots, .row .dots.open { opacity: 1; }
-  .row .dots:hover { color: #fff; background: #3a3a3a; }
+  .row .dots, .row .like-btn { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; opacity: 0; border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+  .row:hover .dots, .row .dots.open, .row:hover .like-btn, .row .like-btn.liked { opacity: 1; }
+  .row .dots:hover, .row .like-btn:hover { color: #fff; background: #3a3a3a; }
+  .row .like-btn.liked { color: var(--green); }
   .dur { text-align: right; }
 
   .empty { text-align: center; color: var(--muted); padding: 60px 20px; line-height: 1.5; }
@@ -193,7 +194,7 @@
     .nav-item, .pl-item { white-space: nowrap; background: #242424; flex-shrink: 0; }
     .add-btn { margin: 0; white-space: nowrap; flex-shrink: 0; }
     .hero-art { width: 100px; height: 100px; font-size: 2.2rem; }
-    .head, .row { grid-template-columns: 30px minmax(0, 1fr) 54px 32px; }
+    .head, .row { grid-template-columns: 30px minmax(0, 1fr) 30px 54px 32px; }
     .head > :nth-child(3), .row .alb { display: none; }
     .bar { grid-template-columns: 1fr; padding: 10px 12px; }
     .right { display: none; }
@@ -378,6 +379,7 @@
   </div>
   <div class="nav-item active" id="navHome">HOME</div>
   <div class="nav-item" id="navLib">YOUR LIBRARY</div>
+  <div class="nav-item" id="navLiked">♥ LIKED SONGS</div>
   <button class="add-btn" id="addBtn">＋ Add Music</button>
   <input type="file" id="files" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.opus" multiple hidden>
   <div class="pl-head"><span>Playlists</span><button id="newPl" title="Create playlist">＋</button></div>
@@ -429,6 +431,7 @@
         <div style="text-align:center">#</div>
         <div data-sort="title" id="hTitle">Title</div>
         <div data-sort="album" id="hAlbum">Album</div>
+        <div></div>
         <div class="dur" data-sort="duration" id="hDur">Time</div>
         <div></div>
       </div>
@@ -468,7 +471,10 @@
   <div class="np">
     <div class="thumb" id="npThumb" title="Open Now Playing">♪</div>
     <div style="min-width:0">
-      <div class="name" id="npName" title="Open Now Playing">Nothing playing</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="name" id="npName" title="Open Now Playing">Nothing playing</div>
+        <button class="ctl" id="npLike" title="Like" style="font-size:1.1rem;padding:0">♡</button>
+      </div>
       <div class="sub" id="npSub">Add some songs</div>
     </div>
   </div>
@@ -559,7 +565,7 @@
   /* ================= state ================= */
   let tracks = [];            // song records
   let playlists = [];         // {id, name, trackIds[]}
-  let view = 'home';          // 'home', 'library', 'search', or a playlist id
+  let view = 'home';          // 'home', 'library', 'liked', 'search', or a playlist id
   let ready = false;          // true once saved songs have been loaded
   let sortKey = '', sortDir = 1;
   let queue = [];             // the list of song ids the current page/album/playlist is playing through
@@ -574,6 +580,26 @@
   const coverUrls = new Map();
   const colorCache = new Map();
   const retried = new Set();
+
+  // Liked songs state
+  const LIKED_KEY = 'vibex-liked-v1';
+  let likedIds = [];
+  try { likedIds = JSON.parse(localStorage.getItem(LIKED_KEY)) || []; } catch (e) {}
+  function saveLiked() {
+    try { localStorage.setItem(LIKED_KEY, JSON.stringify(likedIds)); } catch (e) {}
+  }
+  const isLiked = id => likedIds.includes(id);
+  function toggleLike(id) {
+    if (isLiked(id)) {
+      likedIds = likedIds.filter(x => x !== id);
+      toast('Removed from Liked Songs');
+    } else {
+      likedIds.unshift(id);
+      toast('Added to Liked Songs');
+    }
+    saveLiked();
+    renderAll();
+  }
 
   // Sleep timer state
   let sleepTimerTimeout = null;
@@ -595,7 +621,6 @@
     const ms = minutes * 60 * 1000;
     sleepTimerEnd = Date.now() + ms;
     
-    // Update status text every second
     sleepTimerInterval = setInterval(() => {
       const remaining = sleepTimerEnd - Date.now();
       if (remaining <= 0) {
@@ -607,7 +632,6 @@
       }
     }, 1000);
 
-    // Pause audio when time expires
     sleepTimerTimeout = setTimeout(() => {
       if (!audio.paused) {
         audio.pause();
@@ -760,6 +784,7 @@
     if (coverUrls.has(id)) { URL.revokeObjectURL(coverUrls.get(id)); coverUrls.delete(id); }
     colorCache.delete(id);
     tracks = tracks.filter(x => x.id !== id);
+    likedIds = likedIds.filter(x => x !== id); saveLiked();
     queue = queue.filter(x => x !== id);
     userQueue = userQueue.filter(x => x !== id);
     history = history.filter(x => x !== id);
@@ -854,6 +879,7 @@
     if (menuBtn === btn) return closeMenu();
     closeMenu();
     menu.innerHTML = '';
+    mItem(isLiked(t.id) ? '♥ Remove from Liked Songs' : '♡ Add to Liked Songs', () => toggleLike(t.id));
     mItem('Play next', () => queueSongs([t.id], true));
     mItem('Add to queue', () => queueSongs([t.id], false));
     mSep();
@@ -896,12 +922,10 @@
   }
   function refreshQueueUI() { updateQBadge(); renderQueuePanel(); }
 
-  // atFront = true  -> "Play next"   (goes before anything already queued)
-  // atFront = false -> "Add to queue" (goes after what you already queued)
   function queueSongs(ids, atFront) {
     ids = ids.filter(id => byId(id));
     if (!ids.length) return;
-    if (curId == null) {                       // nothing is playing yet: just start playing
+    if (curId == null) {
       playTrack(ids[0], ids);
       toast('Playing ' + plural(ids.length, 'song'));
       return;
@@ -953,25 +977,22 @@
     if (!qOpen) return;
     const box = $('qpBody'); box.innerHTML = '';
 
-    // now playing
     box.appendChild(qHead('Now playing'));
     const cur = byId(curId);
     if (cur) box.appendChild(qRow(cur, { playing: true, onClick: () => openNP() }));
     else { const d = document.createElement('div'); d.className = 'np-none'; d.textContent = 'Nothing is playing.'; box.appendChild(d); }
 
-    // songs you queued
     const queued = userQueue.map((id, idx) => ({ id, idx })).filter(x => byId(x.id));
     if (queued.length) {
       box.appendChild(qHead('Next in queue', clearQueue));
       queued.forEach(({ id, idx }) => {
         box.appendChild(qRow(byId(id), {
-          onClick: () => { userQueue.splice(0, idx + 1); playTrack(id, null, false, true); },   // jump to it, skipping the ones before
+          onClick: () => { userQueue.splice(0, idx + 1); playTrack(id, null, false, true); },
           onRemove: () => { userQueue.splice(idx, 1); refreshQueueUI(); }
         }));
       });
     }
 
-    // the rest of the album / playlist / library you are playing
     box.appendChild(qHead('Next up'));
     if (shuffleOn) {
       const n = document.createElement('div'); n.className = 'qp-note'; n.textContent = 'Shuffle is on, so the order may change.';
@@ -989,6 +1010,7 @@
   /* ================= views / rendering ================= */
   function baseList() {
     if (view === 'library') return tracks.slice();
+    if (view === 'liked') return likedIds.map(byId).filter(Boolean);
     const p = playlists.find(p => p.id === view);
     return p ? p.trackIds.map(byId).filter(Boolean) : [];
   }
@@ -1002,7 +1024,6 @@
     }
     return list;
   }
-  // song ids to play through from the page you are on (Home / Search = whole library)
   const currentIds = () => ((view === 'home' || view === 'search') ? tracks.map(t => t.id) : viewList().map(t => t.id));
 
   function setView(v, keepSearch) {
@@ -1021,6 +1042,7 @@
   function renderSidebar() {
     $('navHome').className = 'nav-item' + (view === 'home' ? ' active' : '');
     $('navLib').className = 'nav-item' + (view === 'library' ? ' active' : '');
+    $('navLiked').className = 'nav-item' + (view === 'liked' ? ' active' : '');
     const box = $('plList'); box.innerHTML = '';
     if (!playlists.length) {
       const d = document.createElement('div'); d.className = 'pl-none';
@@ -1040,29 +1062,29 @@
     if (view === 'search') { renderSearch(); return; }
     if (view === 'home') return;
     const pl = playlists.find(p => p.id === view);
+    const isLikedView = (view === 'liked');
     const base = baseList();
     const list = viewList();
 
     // hero
-    $('heroLabel').textContent = pl ? 'Playlist' : 'Library';
-    $('heroTitle').textContent = pl ? pl.name : 'Your Library';
+    $('heroLabel').textContent = isLikedView ? 'Playlist' : (pl ? 'Playlist' : 'Library');
+    $('heroTitle').textContent = isLikedView ? 'Liked Songs' : (pl ? pl.name : 'Your Library');
     const secs = base.reduce((s, t) => s + (t.duration || 0), 0);
     const mins = Math.round(secs / 60);
     $('count').textContent = plural(base.length, 'song') + (base.length ? ' · ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') : '');
     const art = $('heroArt'); art.innerHTML = ''; art.removeAttribute('style');
     const withCover = base.find(t => t.cover);
-    if (withCover) { const img = document.createElement('img'); img.src = coverUrl(withCover); img.alt = ''; art.appendChild(img); }
+    if (isLikedView) art.textContent = '♥️';
+    else if (withCover) { const img = document.createElement('img'); img.src = coverUrl(withCover); img.alt = ''; art.appendChild(img); }
     else art.textContent = pl ? '🎵' : '🎧';
 
     $('renamePl').hidden = !pl; $('deletePl').hidden = !pl;
 
-    // sort arrows
     const arrow = k => sortKey === k ? (sortDir === 1 ? ' ▲' : ' ▼') : '';
     $('hTitle').textContent = 'Title' + arrow('title');
     $('hAlbum').textContent = 'Album' + arrow('album');
     $('hDur').textContent = 'Time' + arrow('duration');
 
-    // rows
     const rows = $('rows'); rows.innerHTML = '';
     const ids = list.map(t => t.id);
     list.forEach((t, i) => {
@@ -1077,16 +1099,24 @@
       const txt = document.createElement('div'); txt.style.minWidth = 0;
       const tt = document.createElement('div'); tt.className = 't'; tt.textContent = titleOf(t);
       tt.title = 'Open Now Playing';
-      tt.onclick = e => { e.stopPropagation(); playTrack(t.id, ids); openNP(); };   // clicking the NAME opens the page
+      tt.onclick = e => { e.stopPropagation(); playTrack(t.id, ids); openNP(); };
       const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = artistOf(t);
       txt.append(tt, sb); tc.append(th, txt);
 
       const alb = document.createElement('div'); alb.className = 'alb'; alb.textContent = t.album || '—';
+      
+      const likeBtn = document.createElement('button');
+      const liked = isLiked(t.id);
+      likeBtn.className = 'like-btn' + (liked ? ' liked' : '');
+      likeBtn.textContent = liked ? '♥' : '♡';
+      likeBtn.title = liked ? 'Unlike' : 'Like';
+      likeBtn.onclick = e => { e.stopPropagation(); toggleLike(t.id); };
+
       const d = document.createElement('div'); d.className = 'dur'; d.textContent = fmt(t.duration);
       const dots = document.createElement('button'); dots.className = 'dots'; dots.title = 'More'; dots.textContent = '⋯';
       dots.onclick = e => { e.stopPropagation(); openMenu(dots, t); };
 
-      row.append(num, tc, alb, d, dots);
+      row.append(num, tc, alb, likeBtn, d, dots);
       row.onclick = () => playTrack(t.id, ids);
       rows.appendChild(row);
     });
@@ -1096,11 +1126,11 @@
     else {
       empty.style.display = 'block';
       if ($('search').value.trim()) empty.innerHTML = '<h2>No matches</h2><p>Try a different search.</p>';
+      else if (isLikedView) empty.innerHTML = '<h2>No liked songs yet</h2><p>Click the heart icon (♡) on any song to save it here.</p>';
       else if (pl) empty.innerHTML = '<h2>This playlist is empty</h2><p>Click the ⋯ button on any song in Your Library and choose a playlist,<br>or click <b>Add songs</b> to add new files straight into this playlist.</p>';
       else empty.innerHTML = '<h2>No songs yet</h2><p>Click <b>Add songs</b> or drag audio files anywhere on this page.</p>';
     }
 
-    // big play button state
     const sameQueue = queue.length && queue.join() === ids.join();
     $('bigPlay').textContent = (sameQueue && !audio.paused) ? '⏸' : '▶';
   }
@@ -1121,7 +1151,6 @@
     playTrack(first, ids);
   }
 
-  // open the library already filtered to an artist or album
   function openFiltered(text) { $('search').value = text; setView('library', true); }
 
   function groupBy(keyFn) {
@@ -1135,7 +1164,6 @@
       .sort((a, b) => b.list.length - a.list.length || a.name.localeCompare(b.name));
   }
 
-  // menu(btn) = optional: called when the little ⋯ button on the card is clicked
   function card({ art, title, sub, onOpen, onPlay, menu: onMenu }) {
     const c = document.createElement('div'); c.className = 'card';
     const cover = document.createElement('div'); cover.className = 'card-cover';
@@ -1195,10 +1223,11 @@
       return;
     }
 
-    // quick-access tiles: Your Library + playlists
     const grid = document.createElement('div'); grid.className = 'q-grid';
-    const tiles = [{ name: 'Your Library', list: tracks.slice(), emoji: '🎧', open: () => setView('library') }]
-      .concat(playlists.slice(0, 7).map(p => ({
+    const tiles = [
+      { name: 'Your Library', list: tracks.slice(), emoji: '🎧', open: () => setView('library') },
+      { name: 'Liked Songs', list: likedIds.map(byId).filter(Boolean), emoji: '♥️', open: () => setView('liked') }
+    ].concat(playlists.slice(0, 6).map(p => ({
         name: p.name, list: p.trackIds.map(byId).filter(Boolean), emoji: '🎵', open: () => setView(p.id)
       })));
     tiles.forEach(t => {
@@ -1211,7 +1240,6 @@
     });
     box.appendChild(grid);
 
-    // shelves
     const shelves = document.createElement('div'); shelves.className = 'shelves';
     const trackCard = (t, list) => {
       const ids = list.map(x => x.id);
@@ -1269,6 +1297,12 @@
     const t = byId(curId);
     $('npName').textContent = t ? titleOf(t) : 'Nothing playing';
     $('npSub').textContent = t ? (artistOf(t) + (t.album ? ' • ' + t.album : '')) : 'Add some songs';
+    
+    const liked = curId != null && isLiked(curId);
+    const likeBtn = $('npLike');
+    likeBtn.textContent = liked ? '♥' : '♡';
+    likeBtn.classList.toggle('on', liked);
+
     fillThumb($('npThumb'), t);
     document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'VibeX';
     $('play').textContent = audio.paused ? '▶' : '⏸';
@@ -1276,7 +1310,6 @@
     renderNP();
     renderQueuePanel();
   }
-  // skipHome = don't rebuild the Home page (keeps its shelves from jumping around while you play songs)
   function renderAll(skipHome) {
     renderSidebar();
     if (view === 'home') { if (!skipHome) renderHome(); }
@@ -1327,10 +1360,18 @@
         const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = artistOf(t);
         txt.append(tt, sb); tc.append(th, txt);
         const alb = document.createElement('div'); alb.className = 'alb'; alb.textContent = t.album || '—';
+        
+        const likeBtn = document.createElement('button');
+        const liked = isLiked(t.id);
+        likeBtn.className = 'like-btn' + (liked ? ' liked' : '');
+        likeBtn.textContent = liked ? '♥' : '♡';
+        likeBtn.title = liked ? 'Unlike' : 'Like';
+        likeBtn.onclick = e => { e.stopPropagation(); toggleLike(t.id); };
+
         const d = document.createElement('div'); d.className = 'dur'; d.textContent = fmt(t.duration);
         const dots = document.createElement('button'); dots.className = 'dots'; dots.title = 'More'; dots.textContent = '⋯';
         dots.onclick = e => { e.stopPropagation(); openMenu(dots, t); };
-        row.append(num, tc, alb, d, dots);
+        row.append(num, tc, alb, likeBtn, d, dots);
         row.onclick = () => playTrack(t.id, ids);
         list.appendChild(row);
       });
@@ -1390,7 +1431,7 @@
   function setNpBottom() {
     const b = ($('bar').offsetHeight + 16) + 'px';
     npPage.style.bottom = b;
-    $('qPanel').style.bottom = b;        // only used on phones, where the queue slides over the page
+    $('qPanel').style.bottom = b;
   }
 
   function openNP() {
@@ -1398,7 +1439,7 @@
     npOpen = true;
     setNpBottom();
     npPage.classList.add('open');
-    try { window.history.pushState({ np: true }, ''); } catch (e) {}   // so the browser/phone Back button closes the page
+    try { window.history.pushState({ np: true }, ''); } catch (e) {}
     renderNP();
     npPage.scrollTop = 0;
   }
@@ -1425,7 +1466,7 @@
         const d = x.getImageData(0, 0, 24, 24).data;
         let r = 0, g = 0, b = 0, n = 0;
         for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
-        const k = 0.75 / n;                       // average colour, darkened so the text stays readable
+        const k = 0.75 / n;
         const col = `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)})`;
         colorCache.set(t.id, col);
         if (npOpen && curId === t.id) apply(col);
@@ -1454,7 +1495,6 @@
 
     setNpBackground(t);
 
-    // up next (the rest of the album / playlist / library you are playing)
     const list = $('npNextList'); list.innerHTML = '';
     $('npNextHead').textContent = shuffleOn ? 'Up next (shuffle is on)' : 'Up next';
     const i = queue.indexOf(ctxId);
@@ -1478,7 +1518,6 @@
   }
 
   /* ================= playback ================= */
-  // fromQueue = this song came from your queue, so don't touch the album/playlist you were playing
   function playTrack(id, newQueue, fromHistory, fromQueue) {
     const t = byId(id); if (!t) return;
     if (newQueue) { queue = newQueue.slice(); }
@@ -1514,7 +1553,6 @@
     return queue[i + 1];
   }
   function next(auto) {
-    // songs you queued always play first (unless repeat-one is replaying the current song)
     if (!(repeatMode === 2 && auto)) {
       while (userQueue.length) {
         const n = userQueue.shift();
@@ -1565,7 +1603,7 @@
   });
   audio.addEventListener('error', () => {
     const t = byId(curId); if (!t) return;
-    if (!retried.has(t.id)) {            // fallback: some environments block blob: URLs
+    if (!retried.has(t.id)) {
       retried.add(t.id);
       const r = new FileReader();
       r.onload = () => { audio.src = r.result; audio.play().catch(() => {}); };
@@ -1582,7 +1620,10 @@
   $('files').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
   $('navHome').onclick = () => setView('home');
   $('navLib').onclick = () => setView('library');
+  $('navLiked').onclick = () => setView('liked');
   $('logoHome').onclick = () => setView('home');
+  $('npLike').onclick = () => { if (curId != null) toggleLike(curId); };
+
   $('newPl').onclick = async () => {
     const name = await askName('New playlist');
     if (name) { const p = await createPlaylist(name); setView(p.id); }
@@ -1718,7 +1759,6 @@
     const t = actx.currentTime;
     preGain.gain.setTargetAtTime(eq.on ? dbToGain(eq.preamp) : 1, t, 0.015);
     filters.forEach((f, i) => f.gain.setTargetAtTime(eq.on ? eq.bands[i] : 0, t, 0.015));
-    // safety limiter when boosting (prevents harsh clipping) or stronger compression for volume leveling
     const boosting = eq.on && (eq.preamp > 0 || eq.bands.some(b => b > 0));
     let c = null;
     if (eq.leveling) c = { th: -28, knee: 24, ratio: 4, at: 0.01, rel: 0.25 };
@@ -1778,12 +1818,11 @@
     $('eqGrid').classList.toggle('off', !eq.on);
   }
 
-  // create the audio graph on the first click/key press (browsers require a user gesture)
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, initAudioGraph, true));
 
   $('navSettings').onclick = () => { closeMenu(); initAudioGraph(); refreshEqUI(); stDlg.showModal(); };
   $('stClose').onclick = () => stDlg.close();
-  stDlg.addEventListener('click', e => { if (e.target === stDlg) stDlg.close(); });   // click outside to close
+  stDlg.addEventListener('click', e => { if (e.target === stDlg) stDlg.close(); });
   document.querySelectorAll('.st-tab').forEach(b => b.onclick = () => {
     document.querySelectorAll('.st-tab').forEach(x => x.classList.toggle('active', x === b));
     $('pane-play').hidden = b.dataset.tab !== 'play';
@@ -1802,14 +1841,17 @@
   };
   $('eqLevel').onchange = e => { eq.leveling = e.target.checked; applyEq(); saveSettings(); };
 
-  // Wire up sleep timer dropdown change event
   $('sleepTimerSelect').onchange = e => {
     setSleepTimer(parseInt(e.target.value, 10));
   };
 
   /* ================= update log ================= */
-  // Add new releases at the TOP of this list.
   const CHANGELOG = [
+    { v: '1.7', date: 'Nov 2026', notes: [
+      'Added Liked Songs system with heart buttons on track rows and player bar',
+      'Added permanent Liked Songs playlist navigation and home grid tile',
+      'Added Sleep Timer functionality in the Settings panel'
+    ]},
     { v: '1.6', date: 'Nov 2026', notes: [
       'The queue button now opens a Queue sidebar on the right instead of the full-screen Now Playing page',
       'The sidebar shows what is playing, the songs you queued, and what comes next',
@@ -1867,10 +1909,9 @@
     playlists = (await idb('playlists', 'readonly', s => s.getAll())) || [];
     ready = true;
     renderAll();
-    // songs saved by the older version have no tags yet: read them now
     for (const t of tracks.filter(t => !t.metaDone)) {
       const tags = await readTags(t.blob);
-      if (tags === null) break;                       // tag library unavailable, try again next time
+      if (tags === null) break;
       t.name = t.name || 'Untitled';
       applyTags(t, tags);
       await saveTrack(t);
