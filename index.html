@@ -305,6 +305,24 @@
     .shelf-row { padding: 0 10px 6px; }
     .card { flex-basis: 140px; padding: 10px; }
   }
+
+  /* ---------- Top search bar ---------- */
+  .topbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px; background: linear-gradient(rgba(18,18,18,.92), rgba(18,18,18,.75)); backdrop-filter: blur(10px); }
+  .top-home { width: 48px; height: 48px; border-radius: 50%; border: none; background: #1f1f1f; color: var(--muted); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+  .top-home:hover { color: #fff; background: #2a2a2a; transform: scale(1.05); }
+  .gs-wrap { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; background: #1f1f1f; border: 2px solid transparent; border-radius: 500px; color: var(--muted); transition: background .15s, border-color .15s; }
+  .gs-wrap:hover { background: #2a2a2a; }
+  .gs-wrap:focus-within { border-color: #fff; background: #2a2a2a; color: #fff; }
+  #gSearch { flex: 1; min-width: 0; background: none; border: none; outline: none; color: #fff; font-size: .95rem; font-family: inherit; }
+  #gSearch::placeholder { color: var(--muted); }
+  #gSearch::-webkit-search-cancel-button { display: none; }
+  .gs-clear { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; }
+  .gs-clear:hover { color: #fff; }
+  @media (max-width: 800px) {
+    .topbar { padding: 8px 12px; }
+    .top-home { width: 42px; height: 42px; }
+    .gs-wrap { height: 42px; }
+  }
 </style>
 </head>
 <body>
@@ -328,10 +346,24 @@
 </aside>
 
 <main class="main" id="main">
+  <div class="topbar">
+    <button class="top-home" id="topHome" title="Home" aria-label="Home">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+    </button>
+    <div class="gs-wrap">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="gSearch" type="search" placeholder="What do you want to play?" autocomplete="off">
+      <button class="gs-clear" id="gClear" title="Clear" aria-label="Clear search" hidden>✕</button>
+    </div>
+  </div>
+
   <div id="msg"></div>
 
   <!-- Home page -->
   <div id="homeView"></div>
+
+  <!-- Search results -->
+  <div id="searchView" hidden></div>
 
   <!-- Library / playlist page -->
   <div id="libView" hidden>
@@ -464,7 +496,7 @@
   /* ================= state ================= */
   let tracks = [];            // song records
   let playlists = [];         // {id, name, trackIds[]}
-  let view = 'home';          // 'home', 'library', or a playlist id
+  let view = 'home';          // 'home', 'library', 'search', or a playlist id
   let ready = false;          // true once saved songs have been loaded
   let sortKey = '', sortDir = 1;
   let queue = [];             // track ids currently being played through
@@ -732,19 +764,20 @@
     }
     return list;
   }
-  // song ids to play through from the page you are on (Home = whole library)
-  const currentIds = () => (view === 'home' ? tracks.map(t => t.id) : viewList().map(t => t.id));
+  // song ids to play through from the page you are on (Home / Search = whole library)
+  const currentIds = () => ((view === 'home' || view === 'search') ? tracks.map(t => t.id) : viewList().map(t => t.id));
 
   function setView(v, keepSearch) {
     view = v; sortKey = '';
     if (!keepSearch) $('search').value = '';
+    $('gSearch').value = ''; $('gClear').hidden = true;
     closeMenu(); renderAll(); $('main').scrollTop = 0;
   }
 
   function showView() {
-    const home = view === 'home';
-    $('homeView').hidden = !home;
-    $('libView').hidden = home;
+    $('homeView').hidden = view !== 'home';
+    $('searchView').hidden = view !== 'search';
+    $('libView').hidden = view === 'home' || view === 'search';
   }
 
   function renderSidebar() {
@@ -766,6 +799,7 @@
   }
 
   function renderMain() {
+    if (view === 'search') { renderSearch(); return; }
     if (view === 'home') return;
     const pl = playlists.find(p => p.id === view);
     const base = baseList();
@@ -999,6 +1033,104 @@
     showView();
     updateBar();
   }
+
+  /* ================= top search bar + results ================= */
+  let prevView = 'home';
+
+  function renderSearch() {
+    const box = $('searchView');
+    const q = $('gSearch').value.trim().toLowerCase();
+    const st = $('main').scrollTop;
+    box.innerHTML = '';
+    if (!q) return;
+    const has = s => (s || '').toLowerCase().includes(q);
+    const songs = tracks.filter(t => has(titleOf(t)) || has(t.artist) || has(t.album) || has(t.genre));
+    const artists = groupBy(t => t.artist).filter(a => has(a.name)).slice(0, 15);
+    const albums = groupBy(t => t.album).filter(a => has(a.name)).slice(0, 15);
+    const pls = playlists.filter(p => has(p.name));
+
+    if (!songs.length && !pls.length) {
+      const e = document.createElement('div'); e.className = 'empty';
+      e.innerHTML = '<h2>No results found</h2><p>Check the spelling or try different words.</p>';
+      box.appendChild(e);
+      return;
+    }
+
+    if (songs.length) {
+      const sec = document.createElement('section'); sec.className = 'shelf';
+      const head = document.createElement('div'); head.className = 'shelf-head';
+      const h = document.createElement('h2'); h.textContent = 'Songs';
+      head.appendChild(h);
+      const list = document.createElement('div'); list.className = 'list';
+      const ids = songs.map(t => t.id);
+      songs.slice(0, 50).forEach((t, i) => {
+        const row = document.createElement('div'); row.className = 'row' + (t.id === curId ? ' active' : '');
+        const num = document.createElement('div'); num.className = 'num';
+        num.textContent = (t.id === curId && !audio.paused) ? '♫' : (i + 1);
+        const tc = document.createElement('div'); tc.className = 'title-cell';
+        const th = document.createElement('div'); th.className = 'thumb'; fillThumb(th, t);
+        const txt = document.createElement('div'); txt.style.minWidth = 0;
+        const tt = document.createElement('div'); tt.className = 't'; tt.textContent = titleOf(t);
+        tt.title = 'Open Now Playing';
+        tt.onclick = e => { e.stopPropagation(); playTrack(t.id, ids); openNP(); };
+        const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = artistOf(t);
+        txt.append(tt, sb); tc.append(th, txt);
+        const alb = document.createElement('div'); alb.className = 'alb'; alb.textContent = t.album || '—';
+        const d = document.createElement('div'); d.className = 'dur'; d.textContent = fmt(t.duration);
+        const dots = document.createElement('button'); dots.className = 'dots'; dots.title = 'More'; dots.textContent = '⋯';
+        dots.onclick = e => { e.stopPropagation(); openMenu(dots, t); };
+        row.append(num, tc, alb, d, dots);
+        row.onclick = () => playTrack(t.id, ids);
+        list.appendChild(row);
+      });
+      sec.append(head, list);
+      box.appendChild(sec);
+    }
+
+    if (artists.length) {
+      box.appendChild(shelf('Artists', artists.map(a => card({
+        art: makeArt('card-art round', a.list, a.name),
+        title: a.name, sub: 'Artist',
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+      }))));
+    }
+    if (albums.length) {
+      box.appendChild(shelf('Albums', albums.map(a => card({
+        art: makeArt('card-art', a.list, a.name),
+        title: a.name, sub: artistOf(a.list[0]),
+        onOpen: () => openFiltered(a.name), onPlay: () => playList(a.list)
+      }))));
+    }
+    if (pls.length) {
+      box.appendChild(shelf('Playlists', pls.map(p => {
+        const list = p.trackIds.map(byId).filter(Boolean);
+        return card({
+          art: makeArt('card-art', list, p.name, '🎵'),
+          title: p.name, sub: 'Playlist • ' + plural(list.length, 'song'),
+          onOpen: () => setView(p.id), onPlay: () => playList(list)
+        });
+      })));
+    }
+    $('main').scrollTop = st;
+  }
+
+  $('gSearch').addEventListener('input', () => {
+    const q = $('gSearch').value.trim();
+    $('gClear').hidden = !q;
+    if (q) {
+      if (view !== 'search') { prevView = view; view = 'search'; closeMenu(); $('main').scrollTop = 0; }
+      renderAll(true);
+    } else if (view === 'search') {
+      setView(prevView);
+    }
+  });
+  $('gClear').onclick = () => {
+    $('gSearch').value = ''; $('gClear').hidden = true;
+    if (view === 'search') setView(prevView);
+    $('gSearch').focus();
+  };
+  $('gSearch').addEventListener('keydown', e => { if (e.key === 'Escape') $('gClear').click(); });
+  $('topHome').onclick = () => setView('home');
 
   /* ================= Now Playing page ================= */
   function setNpBottom() { npPage.style.bottom = ($('bar').offsetHeight + 16) + 'px'; }
@@ -1398,6 +1530,9 @@
   /* ================= update log ================= */
   // Add new releases at the TOP of this list.
   const CHANGELOG = [
+    { v: '1.4', date: 'Nov 2026', notes: [
+      'Added a search bar at the top that searches songs, artists, albums, and playlists'
+    ]},
     { v: '1.3', date: 'Nov 2026', notes: [
       'Added a Home page with quick-access tiles, Jump back in, Recently added, playlists, artists, and albums',
       'Added a YOUR LIBRARY button next to HOME',
