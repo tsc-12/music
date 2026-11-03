@@ -527,6 +527,20 @@
     <h4 class="st-sub">Volume</h4>
     <div class="st-row"><label class="st-sw"><input type="checkbox" id="eqLevel"> <b>Volume leveling</b></label></div>
     <p class="st-note">Evens out loud and quiet parts so songs sound more consistent. Turn it off for the most natural sound.</p>
+
+    <hr class="st-hr">
+
+    <h4 class="st-sub">Sleep Timer</h4>
+    <div class="st-row">
+      <select id="sleepTimerSelect" title="Sleep Timer">
+        <option value="0">Off</option>
+        <option value="15">15 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="45">45 minutes</option>
+        <option value="60">60 minutes</option>
+      </select>
+      <span id="sleepTimerStatus" style="color:#b3b3b3;font-size:.85rem;margin-left:12px"></span>
+    </div>
   </div>
 
   <div class="st-pane" id="pane-log" hidden>
@@ -560,6 +574,53 @@
   const coverUrls = new Map();
   const colorCache = new Map();
   const retried = new Set();
+
+  // Sleep timer state
+  let sleepTimerTimeout = null;
+  let sleepTimerEnd = null;
+  let sleepTimerInterval = null;
+
+  function setSleepTimer(minutes) {
+    clearTimeout(sleepTimerTimeout);
+    clearInterval(sleepTimerInterval);
+    
+    const statusEl = $('sleepTimerStatus');
+    
+    if (!minutes || minutes <= 0) {
+      if (statusEl) statusEl.textContent = '';
+      toast('Sleep timer cancelled');
+      return;
+    }
+
+    const ms = minutes * 60 * 1000;
+    sleepTimerEnd = Date.now() + ms;
+    
+    // Update status text every second
+    sleepTimerInterval = setInterval(() => {
+      const remaining = sleepTimerEnd - Date.now();
+      if (remaining <= 0) {
+        clearInterval(sleepTimerInterval);
+        if (statusEl) statusEl.textContent = '';
+      } else {
+        const minsLeft = Math.ceil(remaining / 60000);
+        if (statusEl) statusEl.textContent = `Music stops in ${minsLeft} min`;
+      }
+    }, 1000);
+
+    // Pause audio when time expires
+    sleepTimerTimeout = setTimeout(() => {
+      if (!audio.paused) {
+        audio.pause();
+        updateBar();
+      }
+      clearInterval(sleepTimerInterval);
+      if (statusEl) statusEl.textContent = '';
+      $('sleepTimerSelect').value = "0";
+      toast('Sleep timer ended: Music paused');
+    }, ms);
+
+    toast(`Sleep timer set for ${minutes} minutes`);
+  }
 
   // recently played songs (for "Jump back in" on the Home page)
   const RECENT_KEY = 'vibex-recent-v1';
@@ -1740,6 +1801,11 @@
     applyEq(); saveSettings(); refreshEqUI();
   };
   $('eqLevel').onchange = e => { eq.leveling = e.target.checked; applyEq(); saveSettings(); };
+
+  // Wire up sleep timer dropdown change event
+  $('sleepTimerSelect').onchange = e => {
+    setSleepTimer(parseInt(e.target.value, 10));
+  };
 
   /* ================= update log ================= */
   // Add new releases at the TOP of this list.
