@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,18 +8,56 @@
 <!-- Reads song tags (title, artist, album, cover art). The player still works without it, using file names. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <style>
-  :root {
-    --bg: #000; --panel: #121212; --card: #181818; --hover: #2a2a2a;
-    --text: #fff; --muted: #b3b3b3; --green: #1db954;
+  :root, [data-theme="dark"] {
+    --bg: #000;
+    --panel: #121212;
+    --card: #181818;
+    --hover: #2a2a2a;
+    --text: #fff;
+    --muted: #b3b3b3;
+    --green: #1db954;
+    --border: #2a2a2a;
+    --input-bg: #242424;
+    --menu-bg: #282828;
+    --dlg-bg: #282828;
+    --thumb-bg: #282828;
+    --elevated: #1f1f1f;
+    --elevated-hover: #2a2a2a;
+    --range-track: #4d4d4d;
+    --shadow: rgba(0,0,0,.55);
+    --toast-bg: #fff;
+    --toast-text: #000;
     --ease: cubic-bezier(.2, .8, .2, 1);
   }
+
+  [data-theme="light"] {
+    --bg: #f5f5f5;
+    --panel: #ffffff;
+    --card: #f0f0f0;
+    --hover: #e6e6e6;
+    --text: #121212;
+    --muted: #666666;
+    --green: #1db954;
+    --border: #e0e0e0;
+    --input-bg: #ebebeb;
+    --menu-bg: #ffffff;
+    --dlg-bg: #ffffff;
+    --thumb-bg: #e0e0e0;
+    --elevated: #f0f0f0;
+    --elevated-hover: #e6e6e6;
+    --range-track: #c8c8c8;
+    --shadow: rgba(0,0,0,.18);
+    --toast-bg: #121212;
+    --toast-text: #fff;
+  }
+
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
     background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     display: grid; grid-template-columns: 260px 1fr 0px; grid-template-rows: 1fr 90px; gap: 8px 0; padding: 8px;
-    transition: grid-template-columns .4s var(--ease);
+    transition: grid-template-columns .4s var(--ease), background-color .35s ease, color .35s ease;
   }
   body.q-open { grid-template-columns: 260px 1fr 340px; }
   button { font-family: inherit; transition: transform .18s var(--ease), background-color .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease; }
@@ -55,14 +94,14 @@
   .reorder-hint { margin-top: 6px !important; font-size: .78rem !important; opacity: .8; }
 
   /* ---------- Sidebar ---------- */
-  .sidebar { background: var(--panel); border-radius: 8px; padding: 20px 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; min-height: 0; margin-right: 8px; }
+  .sidebar { background: var(--panel); border-radius: 8px; padding: 20px 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; min-height: 0; margin-right: 8px; transition: background-color .35s ease; }
   .logo { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px; padding: 0 6px 6px; }
   .logo span { background: var(--green); color: #000; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 1rem; transition: transform .35s var(--ease); }
   .logo-home:hover span { transform: rotate(-12deg) scale(1.1); }
   .nav-item, .pl-item { color: var(--muted); font-weight: 700; padding: 10px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; transition: background-color .2s ease, color .2s ease, transform .25s var(--ease); }
-  .nav-item:hover, .pl-item:hover { color: #fff; background: #1f1f1f; transform: translateX(3px); }
+  .nav-item:hover, .pl-item:hover { color: var(--text); background: var(--elevated); transform: translateX(3px); }
   .nav-item:active, .pl-item:active { transform: translateX(3px) scale(.98); }
-  .nav-item.active, .pl-item.active { color: #fff; background: var(--hover); }
+  .nav-item.active, .pl-item.active { color: var(--text); background: var(--hover); }
   .pl-item .n { font-size: .75rem; font-weight: 500; color: var(--muted); }
   .pl-item .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pl-item { animation: fadeUp .35s var(--ease) both; }
@@ -72,9 +111,9 @@
   }
   .add-btn:hover { transform: scale(1.03); background: #1ed760; }
   .add-btn:active { transform: scale(.96); }
-  .pl-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-weight: 700; font-size: .85rem; padding: 4px 10px; border-top: 1px solid #2a2a2a; padding-top: 14px; }
+  .pl-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-weight: 700; font-size: .85rem; padding: 4px 10px; border-top: 1px solid var(--border); padding-top: 14px; }
   .pl-head button { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; }
-  .pl-head button:hover { color: #fff; background: var(--hover); transform: rotate(90deg); }
+  .pl-head button:hover { color: var(--text); background: var(--hover); transform: rotate(90deg); }
   .pl-list { overflow-y: auto; flex: 1; min-height: 0; }
   .pl-none { color: var(--muted); font-size: .8rem; padding: 6px 10px; line-height: 1.4; }
   .side-note { color: var(--muted); font-size: .72rem; line-height: 1.4; padding: 0 8px; }
@@ -85,8 +124,8 @@
   .main.dragover { outline-color: var(--green); }
   #homeView:not([hidden]), #searchView:not([hidden]), #libView:not([hidden]) { animation: fadeUp .4s var(--ease); }
   .hero { padding: 36px 28px 16px; display: flex; align-items: flex-end; gap: 20px; }
-  .hero-art { width: 160px; height: 160px; border-radius: 6px; background: linear-gradient(135deg, #450af5, #c4efd9); display: grid; place-items: center; font-size: 3.5rem; box-shadow: 0 8px 30px rgba(0,0,0,.5); flex-shrink: 0; overflow: hidden; transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
-  .hero-art:hover { transform: scale(1.03) rotate(-1deg); box-shadow: 0 14px 40px rgba(0,0,0,.6); }
+  .hero-art { width: 160px; height: 160px; border-radius: 6px; background: linear-gradient(135deg, #450af5, #c4efd9); display: grid; place-items: center; font-size: 3.5rem; box-shadow: 0 8px 30px var(--shadow); flex-shrink: 0; overflow: hidden; transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
+  .hero-art:hover { transform: scale(1.03) rotate(-1deg); box-shadow: 0 14px 40px var(--shadow); }
   .hero-art img { width: 100%; height: 100%; object-fit: cover; }
   .hero small { text-transform: uppercase; font-size: .72rem; font-weight: 700; }
   .hero h1 { margin: 6px 0 10px; font-size: clamp(1.8rem, 5vw, 3.6rem); line-height: 1.05; word-break: break-word; }
@@ -99,28 +138,28 @@
   }
   .big-play:hover { transform: scale(1.08); background: #1ed760; }
   .big-play:active { transform: scale(.94); }
-  .pill { background: transparent; border: 1px solid #727272; color: #fff; border-radius: 500px; padding: 8px 16px; font-size: .85rem; font-weight: 700; cursor: pointer; }
-  .pill:hover { border-color: #fff; transform: scale(1.03); }
+  .pill { background: transparent; border: 1px solid var(--muted); color: var(--text); border-radius: 500px; padding: 8px 16px; font-size: .85rem; font-weight: 700; cursor: pointer; }
+  .pill:hover { border-color: var(--text); transform: scale(1.03); }
   .pill:active { transform: scale(.96); }
   .pill.danger:hover { border-color: #ff6b6b; color: #ff8a8a; }
   .search {
-    background: #242424; border: 1px solid transparent; border-radius: 500px; color: var(--text);
+    background: var(--input-bg); border: 1px solid transparent; border-radius: 500px; color: var(--text);
     padding: 10px 16px; font-size: .9rem; width: min(260px, 100%); outline: none; margin-left: auto;
     transition: border-color .2s ease, background-color .2s ease, width .35s var(--ease);
   }
-  .search:focus { border-color: #fff; width: min(320px, 100%); }
+  .search:focus { border-color: var(--text); width: min(320px, 100%); }
 
   .list { padding: 0 16px 24px; }
   .head, .row { display: grid; grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1.3fr) 36px 64px 36px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 4px; }
-  .head { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid #2a2a2a; margin: 0 0 8px; border-radius: 0; user-select: none; }
+  .head { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); margin: 0 0 8px; border-radius: 0; user-select: none; }
   .head [data-sort] { cursor: pointer; transition: color .2s ease; }
-  .head [data-sort]:hover { color: #fff; }
+  .head [data-sort]:hover { color: var(--text); }
   .row { cursor: pointer; color: var(--muted); font-size: .9rem; transition: background-color .2s ease, color .2s ease; }
   .row:hover { background: var(--hover); }
-  .row:active { background: #333; }
+  .row:active { background: var(--elevated-hover); }
   .row .num { text-align: center; }
   .row .title-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .thumb { width: 40px; height: 40px; border-radius: 4px; display: grid; place-items: center; font-weight: 800; color: #fff; flex-shrink: 0; overflow: hidden; background: #282828; }
+  .thumb { width: 40px; height: 40px; border-radius: 4px; display: grid; place-items: center; font-weight: 800; color: #fff; flex-shrink: 0; overflow: hidden; background: var(--thumb-bg); }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .row .t { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: color .2s ease; }
   .row .t:hover { text-decoration: underline; }
@@ -129,7 +168,7 @@
   .row.active .t, .row.active .num { color: var(--green); }
   .row .dots, .row .like-btn { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; opacity: 0; border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
   .row:hover .dots, .row .dots.open, .row:hover .like-btn, .row .like-btn.liked { opacity: 1; }
-  .row .dots:hover, .row .like-btn:hover { color: #fff; background: #3a3a3a; transform: scale(1.1); }
+  .row .dots:hover, .row .like-btn:hover { color: var(--text); background: var(--elevated-hover); transform: scale(1.1); }
   .row .like-btn.liked { color: var(--green); }
   .row .like-btn.pop { animation: pop .38s var(--ease); }
   .dur { text-align: right; }
@@ -145,7 +184,7 @@
   #npPage {
     position: fixed; left: 8px; right: 8px; top: 8px; bottom: 106px; z-index: 40;
     border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column;
-    background: linear-gradient(180deg, var(--dynamic-accent, #2c2c54) 0%, #121212 90%);
+    background: linear-gradient(180deg, var(--dynamic-accent, #2c2c54) 0%, var(--panel) 90%);
     opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(32px) scale(.985);
     transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s linear .45s, right .4s var(--ease), background 0.6s ease;
   }
@@ -153,19 +192,21 @@
     opacity: 1; visibility: visible; pointer-events: auto; transform: none;
     transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s, right .4s var(--ease), background 0.6s ease;
   }
-  body.q-open #npPage { right: 356px; }   /* leave room for the Queue sidebar */
+  body.q-open #npPage { right: 356px; }
   .np-top { display: flex; align-items: center; gap: 14px; padding: 18px 24px; position: sticky; top: 0; z-index: 2; }
   .back-btn {
     display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.35); color: #fff; border: none;
     border-radius: 500px; padding: 10px 18px; font-weight: 700; font-size: .9rem; cursor: pointer;
   }
+  [data-theme="light"] .back-btn { background: rgba(0,0,0,.12); color: var(--text); }
   .back-btn:hover { background: rgba(0,0,0,.55); transform: scale(1.03) translateX(-2px); }
+  [data-theme="light"] .back-btn:hover { background: rgba(0,0,0,.2); }
   .back-btn:active { transform: scale(.96); }
   .np-label { font-weight: 700; opacity: .85; }
   .np-body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px 40px; }
   #npPage .np-art {
     width: min(46vh, 80vw, 440px); height: auto; aspect-ratio: 1 / 1; border-radius: 14px;
-    font-size: 8rem; box-shadow: 0 20px 60px rgba(0,0,0,.55); margin-top: 4px;
+    font-size: 8rem; box-shadow: 0 20px 60px var(--shadow); margin-top: 4px;
   }
   #npPage.open .np-info { animation: fadeUp .55s var(--ease) .1s both; }
   #npPage.open .np-next { animation: fadeUp .55s var(--ease) .2s both; }
@@ -174,10 +215,12 @@
   #npArtist { font-size: 1.1rem; opacity: .85; }
   .np-meta { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
   .np-meta span { background: rgba(255,255,255,.12); border-radius: 500px; padding: 5px 12px; font-size: .78rem; }
+  [data-theme="light"] .np-meta span { background: rgba(0,0,0,.08); }
   .np-next { width: min(720px, 100%); margin-top: 18px; }
   .np-next h3 { font-size: 1.25rem; margin: 0 0 10px; }
   .np-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background-color .2s ease, transform .25s var(--ease); }
   .np-row:hover { background: rgba(255,255,255,.1); transform: translateX(3px); }
+  [data-theme="light"] .np-row:hover { background: rgba(0,0,0,.06); }
   .np-row .who { flex: 1; min-width: 0; }
   .np-row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .np-row .a { font-size: .78rem; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -185,34 +228,34 @@
   .np-none { opacity: .7; font-size: .9rem; padding: 8px 10px; }
 
   /* ---------- Context menu ---------- */
-  #menu { position: fixed; display: none; background: #282828; border-radius: 6px; padding: 4px; min-width: 230px; max-width: 300px; max-height: 70vh; overflow-y: auto; box-shadow: 0 16px 40px rgba(0,0,0,.6); z-index: 50; transform-origin: top right; animation: menuIn .18s var(--ease); }
-  #menu .mi { padding: 10px 12px; font-size: .88rem; border-radius: 3px; cursor: pointer; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background-color .15s ease, padding-left .2s var(--ease); }
-  #menu .mi:hover { background: #3e3e3e; padding-left: 16px; }
-  #menu .mi.danger { color: #ff8a8a; }
+  #menu { position: fixed; display: none; background: var(--menu-bg); border-radius: 6px; padding: 4px; min-width: 230px; max-width: 300px; max-height: 70vh; overflow-y: auto; box-shadow: 0 16px 40px var(--shadow); z-index: 50; transform-origin: top right; animation: menuIn .18s var(--ease); border: 1px solid var(--border); }
+  #menu .mi { padding: 10px 12px; font-size: .88rem; border-radius: 3px; cursor: pointer; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background-color .15s ease, padding-left .2s var(--ease); }
+  #menu .mi:hover { background: var(--hover); padding-left: 16px; }
+  #menu .mi.danger { color: #ff6b6b; }
   #menu .ml { padding: 8px 12px 4px; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  #menu hr { border: none; border-top: 1px solid #3e3e3e; margin: 4px 0; }
+  #menu hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
   /* ---------- Dialog ---------- */
-  dialog { background: #282828; color: #fff; border: none; border-radius: 10px; padding: 22px; width: min(420px, 92vw); }
+  dialog { background: var(--dlg-bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 22px; width: min(420px, 92vw); box-shadow: 0 20px 50px var(--shadow); }
   dialog[open] { animation: dlgIn .28s var(--ease); }
-  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
   dialog[open]::backdrop { animation: fadeIn .28s ease; }
   dialog h3 { margin: 0 0 14px; }
-  dialog input { width: 100%; background: #3e3e3e; border: 1px solid transparent; color: #fff; border-radius: 6px; padding: 11px 12px; font-size: 1rem; outline: none; transition: border-color .2s ease; }
-  dialog input:focus { border-color: #fff; }
+  dialog input { width: 100%; background: var(--input-bg); border: 1px solid transparent; color: var(--text); border-radius: 6px; padding: 11px 12px; font-size: 1rem; outline: none; transition: border-color .2s ease; }
+  dialog input:focus { border-color: var(--text); }
   .dlg-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-  .dbtn { background: transparent; color: #fff; border: none; font-weight: 700; padding: 10px 18px; border-radius: 500px; cursor: pointer; }
+  .dbtn { background: transparent; color: var(--text); border: none; font-weight: 700; padding: 10px 18px; border-radius: 500px; cursor: pointer; }
   .dbtn:hover { transform: scale(1.04); }
   .dbtn:active { transform: scale(.95); }
-  .dbtn.primary { background: #fff; color: #000; }
-  .dbtn.danger { background: #e5484d; }
+  .dbtn.primary { background: var(--text); color: var(--bg); }
+  .dbtn.danger { background: #e5484d; color: #fff; }
   .info { display: grid; grid-template-columns: 90px 1fr; gap: 8px 12px; font-size: .9rem; }
   .info dt { color: var(--muted); }
   .info dd { margin: 0; word-break: break-word; }
   .info-art { width: 140px; height: 140px; margin: 0 auto 16px; border-radius: 6px; font-size: 3rem; }
 
   /* ---------- Player bar ---------- */
-  .bar { grid-column: 1 / -1; background: var(--bg); display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; padding: 0 12px; gap: 12px; }
+  .bar { grid-column: 1 / -1; background: var(--bg); display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; padding: 0 12px; gap: 12px; transition: background-color .35s ease; }
   .np { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .np .thumb { width: 56px; height: 56px; cursor: pointer; transition: transform .25s var(--ease); }
   .np .thumb:hover { transform: scale(1.06); }
@@ -222,13 +265,13 @@
   .center { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .controls { display: flex; align-items: center; gap: 18px; }
   .ctl { background: none; border: none; color: var(--muted); font-size: 1.15rem; cursor: pointer; padding: 4px; position: relative; }
-  .ctl:hover { color: #fff; transform: scale(1.12); }
+  .ctl:hover { color: var(--text); transform: scale(1.12); }
   .ctl:active { transform: scale(.92); }
   .ctl.on { color: var(--green); }
   .ctl.on::after { content: ""; position: absolute; left: 50%; bottom: -3px; width: 4px; height: 4px; border-radius: 50%; background: var(--green); transform: translateX(-50%); animation: fadeIn .3s ease; }
   .ctl.pop { animation: pop .38s var(--ease); }
   #speedBtn { font-size: .8rem; font-weight: 700; min-width: 38px; }
-  .play-btn { width: 36px; height: 36px; border-radius: 50%; background: #fff; color: #000; border: none; font-size: 1rem; cursor: pointer; display: grid; place-items: center; }
+  .play-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); border: none; font-size: 1rem; cursor: pointer; display: grid; place-items: center; }
   .play-btn:hover { transform: scale(1.08); }
   .play-btn:active { transform: scale(.92); }
   .play-btn.pulse { animation: pulse .3s var(--ease); }
@@ -239,12 +282,12 @@
   .right input { width: 100px; }
 
   input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; flex: 1; cursor: pointer; outline: none; padding: 0; border: none;
-    background: linear-gradient(to right, #fff var(--pct, 0%), #4d4d4d var(--pct, 0%)); }
-  input[type=range]:hover { background: linear-gradient(to right, var(--green) var(--pct, 0%), #4d4d4d var(--pct, 0%)); }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; opacity: 0; transition: opacity .2s ease, transform .2s var(--ease); }
+    background: linear-gradient(to right, var(--text) var(--pct, 0%), var(--range-track) var(--pct, 0%)); }
+  input[type=range]:hover { background: linear-gradient(to right, var(--green) var(--pct, 0%), var(--range-track) var(--pct, 0%)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text); opacity: 0; transition: opacity .2s ease, transform .2s var(--ease); }
   input[type=range]:hover::-webkit-slider-thumb { opacity: 1; }
   input[type=range]:active::-webkit-slider-thumb { transform: scale(1.3); }
-  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: none; border-radius: 50%; background: #fff; }
+  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: none; border-radius: 50%; background: var(--text); }
 
   @media (max-width: 800px) {
     body, body.q-open { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
@@ -255,7 +298,7 @@
     .logo { flex-shrink: 0; padding: 0; font-size: 1.1rem; }
     .pl-head { border: none; padding: 0; }
     .pl-list { display: flex; gap: 8px; overflow: visible; flex: none; }
-    .nav-item, .pl-item { white-space: nowrap; background: #242424; flex-shrink: 0; }
+    .nav-item, .pl-item { white-space: nowrap; background: var(--elevated); flex-shrink: 0; }
     .add-btn { margin: 0; white-space: nowrap; flex-shrink: 0; }
     .hero-art { width: 100px; height: 100px; font-size: 2.2rem; }
     .head, .row { grid-template-columns: 30px minmax(0, 1fr) 30px 54px 32px; }
@@ -271,36 +314,36 @@
   #settings { width: min(720px, 94vw); padding: 0; max-height: 92vh; overflow-y: auto; }
   .st-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px 6px; }
   .st-head h3 { margin: 0; font-size: 1.3rem; }
-  .st-x { background: none; border: none; color: #b3b3b3; font-size: 1.1rem; cursor: pointer; border-radius: 50%; width: 34px; height: 34px; }
-  .st-x:hover { color: #fff; background: #3a3a3a; transform: rotate(90deg); }
-  .st-tabs { display: flex; gap: 8px; padding: 8px 22px 0; border-bottom: 1px solid #3e3e3e; }
-  .st-tab { background: none; border: none; color: #b3b3b3; font-weight: 700; padding: 10px 14px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; transition: color .2s ease, border-color .25s ease; }
-  .st-tab:hover { color: #fff; }
-  .st-tab.active { color: #fff; border-bottom-color: var(--green); }
+  .st-x { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; border-radius: 50%; width: 34px; height: 34px; }
+  .st-x:hover { color: var(--text); background: var(--hover); transform: rotate(90deg); }
+  .st-tabs { display: flex; gap: 8px; padding: 8px 22px 0; border-bottom: 1px solid var(--border); }
+  .st-tab { background: none; border: none; color: var(--muted); font-weight: 700; padding: 10px 14px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; transition: color .2s ease, border-color .25s ease; }
+  .st-tab:hover { color: var(--text); }
+  .st-tab.active { color: var(--text); border-bottom-color: var(--green); }
   .st-pane { padding: 18px 22px 22px; }
   .st-pane:not([hidden]) { animation: fadeUp .35s var(--ease); }
   .st-pane[hidden] { display: none; }
   .st-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .st-sw { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-  .st-note { color: #b3b3b3; font-size: .82rem; line-height: 1.5; margin: 10px 0 0; }
+  .st-note { color: var(--muted); font-size: .82rem; line-height: 1.5; margin: 10px 0 0; }
   .st-sub { margin: 0 0 12px; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  .st-hr { border: none; border-top: 1px solid #3e3e3e; margin: 22px 0; }
+  .st-hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
   #settings input[type=checkbox] { width: 18px; height: 18px; padding: 0; margin: 0; background: none; border: none; accent-color: var(--green); }
-  #settings select { margin-left: auto; background: #3e3e3e; color: #fff; border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; font-size: .9rem; transition: border-color .2s ease; }
-  #settings select:focus { outline: none; border-color: #fff; }
+  #settings select { margin-left: auto; background: var(--input-bg); color: var(--text); border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; font-size: .9rem; transition: border-color .2s ease; }
+  #settings select:focus { outline: none; border-color: var(--text); }
   #settings input[type=range]::-webkit-slider-thumb { opacity: 1; width: 16px; height: 16px; }
   #eqPre { flex: 1; min-width: 140px; max-width: 340px; }
-  .eq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; padding: 12px 4px 8px; background: #202020; border-radius: 10px; transition: opacity .3s ease; }
+  .eq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; padding: 12px 4px 8px; background: var(--elevated); border-radius: 10px; transition: opacity .3s ease; }
   .eq-grid.off { opacity: .45; }
   .eq-band { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .eq-db { font-size: .72rem; color: #b3b3b3; height: 1em; }
-  .eq-hz { font-size: .72rem; color: #b3b3b3; }
+  .eq-db { font-size: .72rem; color: var(--muted); height: 1em; }
+  .eq-hz { font-size: .72rem; color: var(--muted); }
   .eq-wrap { position: relative; width: 34px; height: 160px; }
-  .eq-wrap::before { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: #555; }
+  .eq-wrap::before { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: var(--range-track); }
   #settings .eq-wrap input[type=range],
   #settings .eq-wrap input[type=range]:hover {
     position: absolute; left: 50%; top: 50%; width: 160px; height: 4px; margin: 0;
-    transform: translate(-50%, -50%) rotate(-90deg); background: #4d4d4d;
+    transform: translate(-50%, -50%) rotate(-90deg); background: var(--range-track);
   }
   @media (max-width: 560px) {
     .eq-grid { gap: 2px; padding: 12px 0 8px; }
@@ -309,7 +352,7 @@
   }
 
   /* ---------- Update log ---------- */
-  .log-entry { padding: 0 0 16px; margin-bottom: 16px; border-bottom: 1px solid #3e3e3e; animation: fadeUp .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+  .log-entry { padding: 0 0 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); animation: fadeUp .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
   .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
   .log-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .log-ver { background: var(--green); color: #000; font-weight: 800; font-size: .75rem; border-radius: 500px; padding: 3px 10px; }
@@ -319,7 +362,7 @@
   /* ---------- Sidebar header icons ---------- */
   .icon-btn { background: none; border: none; color: var(--muted); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
   #navKeys { margin-left: auto; }
-  .icon-btn:hover { color: #fff; background: var(--hover); }
+  .icon-btn:hover { color: var(--text); background: var(--hover); }
   .icon-btn svg { transition: transform .45s var(--ease); }
   .icon-btn.spin:hover svg { transform: rotate(90deg); }
 
@@ -328,7 +371,7 @@
   #keys .st-head { padding: 0 0 12px; }
   .keys-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center; font-size: .9rem; }
   .keys-grid .kk { text-align: right; white-space: nowrap; }
-  kbd { display: inline-block; background: #3e3e3e; border-radius: 5px; border-bottom: 2px solid #1b1b1b; padding: 3px 8px; margin-left: 4px; font: 600 .8rem system-ui, sans-serif; color: #fff; }
+  kbd { display: inline-block; background: var(--elevated); border-radius: 5px; border-bottom: 2px solid var(--border); padding: 3px 8px; margin-left: 4px; font: 600 .8rem system-ui, sans-serif; color: var(--text); }
 
   /* ---------- Home page ---------- */
   .logo-home { display: flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -336,14 +379,16 @@
   .home-top h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.6rem); }
   .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; padding: 12px 28px 8px; }
   .q-tile { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; cursor: pointer; padding-right: 10px; transition: background-color .25s ease, transform .3s var(--ease); }
+  [data-theme="light"] .q-tile { background: rgba(0,0,0,.06); }
   .q-tile:hover { background: rgba(255,255,255,.2); transform: translateY(-2px); }
+  [data-theme="light"] .q-tile:hover { background: rgba(0,0,0,.1); }
   .q-tile:active { transform: scale(.98); }
-  .q-art { width: 56px; height: 56px; flex-shrink: 0; display: grid; place-items: center; font-size: 1.6rem; font-weight: 800; color: #fff; overflow: hidden; background: #282828; }
+  .q-art { width: 56px; height: 56px; flex-shrink: 0; display: grid; place-items: center; font-size: 1.6rem; font-weight: 800; color: #fff; overflow: hidden; background: var(--thumb-bg); }
   .q-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .q-name { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .q-play, .card-play {
     width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #000; border: none; font-size: 1rem; cursor: pointer;
-    display: grid; place-items: center; box-shadow: 0 6px 16px rgba(0,0,0,.45);
+    display: grid; place-items: center; box-shadow: 0 6px 16px var(--shadow);
     opacity: 0; transform: translateY(8px); transition: opacity .25s ease, transform .3s var(--ease), background-color .2s ease;
   }
   .q-tile:hover .q-play, .card:hover .card-play, .q-play:focus-visible, .card-play:focus-visible { opacity: 1; transform: none; }
@@ -354,16 +399,19 @@
   .shelf-head h2 { margin: 0; font-size: 1.4rem; }
   .shelf-arrows { display: flex; gap: 6px; }
   .shelf-arrows button { width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(0,0,0,.4); color: #fff; font-size: 1.2rem; cursor: pointer; line-height: 1; }
+  [data-theme="light"] .shelf-arrows button { background: rgba(0,0,0,.12); color: var(--text); }
   .shelf-arrows button:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
+  [data-theme="light"] .shelf-arrows button:hover { background: rgba(0,0,0,.2); }
   .shelf-arrows button:active { transform: scale(.92); }
   .shelf-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 6px; scroll-snap-type: x proximity; scrollbar-width: none; }
   .shelf-row::-webkit-scrollbar { display: none; }
   .card { flex: 0 0 172px; padding: 12px; border-radius: 8px; cursor: pointer; scroll-snap-align: start; transition: background-color .25s ease, transform .3s var(--ease); }
   .card:hover { background: rgba(255,255,255,.1); transform: translateY(-4px); }
+  [data-theme="light"] .card:hover { background: rgba(0,0,0,.06); }
   .card:active { transform: translateY(-1px) scale(.98); }
   .card-cover { position: relative; margin-bottom: 12px; }
-  .card-art { aspect-ratio: 1 / 1; width: 100%; border-radius: 6px; overflow: hidden; display: grid; place-items: center; font-size: 2.8rem; font-weight: 800; color: #fff; background: #282828; box-shadow: 0 8px 24px rgba(0,0,0,.4); transition: box-shadow .3s ease; }
-  .card:hover .card-art { box-shadow: 0 14px 30px rgba(0,0,0,.55); }
+  .card-art { aspect-ratio: 1 / 1; width: 100%; border-radius: 6px; overflow: hidden; display: grid; place-items: center; font-size: 2.8rem; font-weight: 800; color: #fff; background: var(--thumb-bg); box-shadow: 0 8px 24px var(--shadow); transition: box-shadow .3s ease; }
+  .card:hover .card-art { box-shadow: 0 14px 30px var(--shadow); }
   .card-art.round { border-radius: 50%; }
   .card-art img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s var(--ease); }
   .card:hover .card-art img { transform: scale(1.06); }
@@ -390,18 +438,19 @@
 
   /* ---------- Top search bar ---------- */
   .topbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px; background: linear-gradient(rgba(18,18,18,.92), rgba(18,18,18,.75)); backdrop-filter: blur(10px); }
-  .top-home { width: 48px; height: 48px; border-radius: 50%; border: none; background: #1f1f1f; color: var(--muted); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-  .top-home:hover { color: #fff; background: #2a2a2a; transform: scale(1.07); }
+  [data-theme="light"] .topbar { background: linear-gradient(rgba(245,245,245,.94), rgba(245,245,245,.8)); }
+  .top-home { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--elevated); color: var(--muted); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+  .top-home:hover { color: var(--text); background: var(--hover); transform: scale(1.07); }
   .top-home:active { transform: scale(.94); }
-  .gs-wrap { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; background: #1f1f1f; border: 2px solid transparent; border-radius: 500px; color: var(--muted); transition: background-color .2s ease, border-color .25s ease, max-width .45s var(--ease), color .2s ease; }
-  .gs-wrap:hover { background: #2a2a2a; }
-  .gs-wrap:focus-within { border-color: #fff; background: #2a2a2a; color: #fff; max-width: 600px; }
-  #gSearch { flex: 1; min-width: 0; background: none; border: none; outline: none; color: #fff; font-size: .95rem; font-family: inherit; }
+  .gs-wrap { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; background: var(--elevated); border: 2px solid transparent; border-radius: 500px; color: var(--muted); transition: background-color .2s ease, border-color .25s ease, max-width .45s var(--ease), color .2s ease; }
+  .gs-wrap:hover { background: var(--hover); }
+  .gs-wrap:focus-within { border-color: var(--text); background: var(--hover); color: var(--text); max-width: 600px; }
+  #gSearch { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: .95rem; font-family: inherit; }
   #gSearch::placeholder { color: var(--muted); }
   #gSearch::-webkit-search-cancel-button { display: none; }
   .gs-clear { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; }
   .gs-clear:not([hidden]) { animation: fadeIn .2s ease; }
-  .gs-clear:hover { color: #fff; transform: rotate(90deg); }
+  .gs-clear:hover { color: var(--text); transform: rotate(90deg); }
   @media (max-width: 800px) {
     .topbar { padding: 8px 12px; }
     .top-home { width: 42px; height: 42px; }
@@ -417,17 +466,18 @@
   .card:hover .card-more, .card-more.open, .card-more:focus-visible { opacity: 1; }
   .card-more:hover { background: rgba(0,0,0,.85); transform: scale(1.1); }
   @media (hover: none) { .card-more { opacity: 1; } }
-  .np-x { background: none; border: none; color: #fff; opacity: .6; font-size: 1rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; }
+  .np-x { background: none; border: none; color: var(--text); opacity: .6; font-size: 1rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; }
   .np-x:hover { opacity: 1; background: rgba(255,255,255,.15); transform: rotate(90deg); }
+  [data-theme="light"] .np-x:hover { background: rgba(0,0,0,.08); }
   #qBtn { font-size: 1rem; }
 
-  /* Queue sidebar: slides + fades in while the page grid makes room for it */
+  /* Queue sidebar */
   #qPanel {
     display: flex; background: var(--panel); border-radius: 8px; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden;
     opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(28px);
-    transition: opacity .3s ease, transform .45s var(--ease), visibility 0s linear .45s;
+    transition: opacity .3s ease, transform .45s var(--ease), visibility 0s linear .45s, background-color .35s ease;
   }
-  #qPanel > * { min-width: 340px; }          /* keep the content steady while the column grows */
+  #qPanel > * { min-width: 340px; }
   body.q-open #qPanel {
     opacity: 1; visibility: visible; pointer-events: auto; transform: none;
     transition: opacity .35s ease .06s, transform .45s var(--ease), visibility 0s;
@@ -435,28 +485,27 @@
   .qp-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 18px 6px; gap: 8px; }
   .qp-head h3 { margin: 0; font-size: 1.1rem; }
   .qp-actions { display: flex; align-items: center; gap: 6px; }
-  .qp-save { background: transparent; border: 1px solid #727272; color: #fff; border-radius: 500px; padding: 6px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-  .qp-save:hover { border-color: #fff; transform: scale(1.04); }
+  .qp-save { background: transparent; border: 1px solid var(--muted); color: var(--text); border-radius: 500px; padding: 6px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .qp-save:hover { border-color: var(--text); transform: scale(1.04); }
   .qp-save:active { transform: scale(.96); }
   .qp-x { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; }
-  .qp-x:hover { color: #fff; background: #2a2a2a; transform: rotate(90deg); }
+  .qp-x:hover { color: var(--text); background: var(--hover); transform: rotate(90deg); }
   .qp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 10px 16px; }
   .qp-sec { display: flex; justify-content: space-between; align-items: center; padding: 16px 10px 6px; }
   .qp-sec h4 { margin: 0; font-size: .95rem; }
   .qp-clear { background: none; border: none; color: var(--muted); font-weight: 700; font-size: .82rem; cursor: pointer; }
-  .qp-clear:hover { color: #fff; text-decoration: underline; }
+  .qp-clear:hover { color: var(--text); text-decoration: underline; }
   .qp-note { color: var(--muted); font-size: .78rem; padding: 0 10px 6px; }
   .qp-body .np-row.playing .t { color: var(--green); }
   @media (max-width: 800px) {
-    /* on phones the Queue sidebar slides up over the page instead */
     #qPanel { position: fixed; left: 8px; right: 8px; top: 8px; bottom: 106px; z-index: 45; transform: translateY(40px) scale(.98); }
     #qPanel > * { min-width: 0; }
     body.q-open #qPanel { transform: none; }
   }
 
   #toast {
-    position: fixed; left: 50%; bottom: 110px; transform: translate(-50%, 14px) scale(.96); background: #fff; color: #000;
-    font-weight: 700; font-size: .88rem; padding: 10px 18px; border-radius: 500px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    position: fixed; left: 50%; bottom: 110px; transform: translate(-50%, 14px) scale(.96); background: var(--toast-bg); color: var(--toast-text);
+    font-weight: 700; font-size: .88rem; padding: 10px 18px; border-radius: 500px; box-shadow: 0 10px 30px var(--shadow);
     opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .35s var(--ease); z-index: 70; max-width: 90vw; text-align: center;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
@@ -475,12 +524,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(24, 24, 24, 0.95);
+    background: var(--panel);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 10px 14px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 32px var(--shadow);
     min-width: 320px;
     max-width: 400px;
     animation: fadeUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -492,7 +541,7 @@
     width: 48px;
     height: 48px;
     border-radius: 6px;
-    background: #282828;
+    background: var(--thumb-bg);
     display: grid;
     place-items: center;
     font-weight: 800;
@@ -518,7 +567,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #fff;
+    color: var(--text);
   }
   .mp-artist {
     font-size: 0.75rem;
@@ -535,6 +584,7 @@
     margin-top: 6px;
     overflow: hidden;
   }
+  [data-theme="light"] .mp-progress { background: rgba(0,0,0,.12); }
   .mp-bar {
     height: 100%;
     width: 0%;
@@ -561,18 +611,19 @@
     transition: color 0.18s ease, transform 0.18s ease;
   }
   .mp-btn:hover {
-    color: #fff;
+    color: var(--text);
     transform: scale(1.1);
   }
   .mp-btn.mp-play {
-    background: #fff;
-    color: #000;
+    background: var(--text);
+    color: var(--bg);
     width: 32px;
     height: 32px;
     font-size: 0.85rem;
   }
   .mp-btn.mp-play:hover {
     background: var(--green);
+    color: #000;
     transform: scale(1.08);
   }
   .mp-btn.mp-expand:hover {
@@ -597,6 +648,9 @@
     </div>
     <button class="icon-btn" id="navKeys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+    </button>
+    <button class="icon-btn" id="themeToggle" title="Toggle light / dark mode" aria-label="Toggle theme">
+      <svg id="themeIcon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
     </button>
     <button class="icon-btn spin" id="navSettings" title="Settings" aria-label="Settings">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -716,7 +770,7 @@
     <button class="mp-btn mp-play" id="mpPlay" title="Play/Pause">▶</button>
     <button class="mp-btn" id="mpNext" title="Next">⏭</button>
     <button class="mp-btn mp-expand" id="mpExpand" title="Expand to full player">⛶</button>
-    <button class="mp-btn mp-close" id="mpClose" title="Hide mini-player">✕</button>
+    <button class="mp-btn mp-close" title="Hide mini-player" id="mpClose">✕</button>
   </div>
 </div>
 
@@ -785,7 +839,7 @@
     <div class="st-row" style="margin-top:16px">
       <b>Preamp</b>
       <input type="range" id="eqPre" min="-12" max="12" step="0.5" value="0">
-      <span id="eqPreVal" style="min-width:60px;color:#b3b3b3;font-size:.9rem">0 dB</span>
+      <span id="eqPreVal" style="min-width:60px;color:var(--muted);font-size:.9rem">0 dB</span>
     </div>
     <p class="st-note" id="eqNote"></p>
 
@@ -802,7 +856,7 @@
     <div class="st-row" id="cfLenRow">
       <b>Length</b>
       <input type="range" id="cfLen" min="1" max="12" step="1" value="6">
-      <span id="cfLenVal" style="min-width:60px;color:#b3b3b3;font-size:.9rem">6 s</span>
+      <span id="cfLenVal" style="min-width:60px;color:var(--muted);font-size:.9rem">6 s</span>
     </div>
     <p class="st-note" id="cfNote"></p>
 
@@ -812,7 +866,7 @@
     <div class="st-row">
       <b>Speed</b>
       <input type="range" id="spdRange" min="0.5" max="2" step="0.05" value="1">
-      <span id="spdVal" style="min-width:48px;color:#b3b3b3;font-size:.9rem">1x</span>
+      <span id="spdVal" style="min-width:48px;color:var(--muted);font-size:.9rem">1x</span>
       <button class="pill" id="spdReset">Reset</button>
     </div>
     <p class="st-note">Changes how fast songs play while keeping the pitch the same. You can also click the speed button next to the volume, or press [ and ] on your keyboard.</p>
@@ -829,7 +883,7 @@
         <option value="45">45 minutes</option>
         <option value="60">60 minutes</option>
       </select>
-      <span id="sleepTimerStatus" style="color:#b3b3b3;font-size:.85rem;margin-left:12px"></span>
+      <span id="sleepTimerStatus" style="color:var(--muted);font-size:.85rem;margin-left:12px"></span>
     </div>
   </div>
 
@@ -847,32 +901,62 @@
   const $ = id => document.getElementById(id);
   const players = [$('audio'), $('audio2')];
   let active = 0;
-  let audio = players[active];      // the player that is "on" right now (changes during a crossfade)
+  let audio = players[active];
   const npPage = $('npPage');
 
+  /* ================= Theme ================= */
+  const THEME_KEY = 'vibex-theme-v1';
+  const sunSvg = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+  const moonSvg = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const icon = $('themeIcon');
+    if (icon) {
+      icon.innerHTML = theme === 'light' ? moonSvg : sunSvg;
+    }
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  }
+
+  // Init theme
+  (function initTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+    if (saved === 'light' || saved === 'dark') {
+      applyTheme(saved);
+    } else {
+      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      applyTheme(prefersLight ? 'light' : 'dark');
+    }
+  })();
+
   /* ================= state ================= */
-  let tracks = [];            // song records
-  let playlists = [];         // {id, name, trackIds[]}
-  let view = 'home';          // 'home', 'library', 'liked', 'recent', 'search', or a playlist id
-  let ready = false;          // true once saved songs have been loaded
+  let tracks = [];
+  let playlists = [];
+  let view = 'home';
+  let ready = false;
   let sortKey = '', sortDir = 1;
-  let queue = [];             // the list of song ids the current page/album/playlist is playing through
-  let userQueue = [];         // songs you added with "Play next" / "Add to queue" (they play before the rest of `queue`)
-  let tailQueue = [];         // songs added with "Play last" (they play after the rest of `queue`)
-  let ctxId = null;           // where we are inside `queue` (so queued songs don't lose your place)
+  let queue = [];
+  let userQueue = [];
+  let tailQueue = [];
+  let ctxId = null;
   let curId = null;
-  let shuffleOn = false, repeatMode = 0;   // repeat: 0 off, 1 all, 2 one
+  let shuffleOn = false, repeatMode = 0;
   let history = [];
   let db = null, memId = 1;
-  let npOpen = false;         // is the Now Playing page showing?
-  let qOpen = false;          // is the Queue sidebar showing?
-  const urls = [null, null];  // object URLs for the two players
+  let npOpen = false;
+  let qOpen = false;
+  const urls = [null, null];
   const coverUrls = new Map();
   const colorCache = new Map();
   const retried = new Set();
 
-  // animation helpers
-  let popId = null;           // song whose heart should "pop" on the next render
+  let popId = null;
   let npLast = null, barLast = null, lastPaused = null;
   function bump(el, cls) {
     if (!el) return;
@@ -880,7 +964,6 @@
     el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
   }
 
-  // audio engine (Web Audio) + crossfade state
   let actx = null, graphReady = false, graphFailed = false;
   let preGain, filters = [], comp, makeup, pg = [];
   let xfading = false, fadeOutIdx = 1, fadeTimer = null, fadeSecsNext = null;
@@ -891,7 +974,6 @@
   cf.secs = Math.min(12, Math.max(1, Number(cf.secs) || 6));
   cf.on = !!cf.on;
 
-  // Liked songs state
   const LIKED_KEY = 'vibex-liked-v1';
   let likedIds = [];
   try { likedIds = JSON.parse(localStorage.getItem(LIKED_KEY)) || []; } catch (e) {}
@@ -913,11 +995,10 @@
     popId = null;
   }
 
-  // Sleep timer state
   let sleepTimerTimeout = null;
   let sleepTimerEnd = null;
   let sleepTimerInterval = null;
-  let sleepAtEnd = false;     // "End of this song" mode
+  let sleepAtEnd = false;
 
   function setSleepTimer(minutes) {
     clearTimeout(sleepTimerTimeout);
@@ -965,7 +1046,6 @@
     toast(`Sleep timer set for ${minutes} minutes`);
   }
 
-  // recently played songs (for "Jump back in" on the Home page and the Recently Played page)
   const RECENT_KEY = 'vibex-recent-v1';
   let recents = [];
   try { recents = JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) {}
@@ -1012,7 +1092,6 @@
     else el.textContent = '♪';
   }
 
-  // animated equalizer bars for the song that is playing
   function makeBars() {
     const s = document.createElement('span');
     s.className = 'eqbars' + (audio.paused ? ' paused' : '');
@@ -1097,7 +1176,7 @@
   }
   function readTags(file) {
     return new Promise(res => {
-      if (!window.jsmediatags) return res(null);          // library didn't load (offline)
+      if (!window.jsmediatags) return res(null);
       try { window.jsmediatags.read(file, { onSuccess: t => res(t.tags || {}), onError: () => res({}) }); }
       catch (e) { res({}); }
       setTimeout(() => res({}), 6000);
@@ -1132,7 +1211,7 @@
       const [duration, tags] = await Promise.all([getDuration(f), readTags(f)]);
       const rec = { name: f.name.replace(/\.[^.]+$/, ''), type: f.type, size: f.size, blob: f, duration, added: Date.now(), cover: null };
       applyTags(rec, tags);
-      if (!tags) rec.metaDone = false;                      // retry later if the tag library was unavailable
+      if (!tags) rec.metaDone = false;
       if (db) {
         try { rec.id = await idb('tracks', 'readwrite', s => s.add(rec)); }
         catch (e) { rec.id = 'm' + memId++; msg('Could not save to browser storage. Songs will be lost on refresh.', true); }
@@ -1249,7 +1328,6 @@
     btn.classList.add('open'); menuBtn = btn;
   }
 
-  // menu for one song
   function openMenu(btn, t) {
     if (menuBtn === btn) return closeMenu();
     closeMenu();
@@ -1288,7 +1366,6 @@
     placeMenu(btn);
   }
 
-  // menu for a whole album / artist / playlist
   function openListMenu(btn, list, name) {
     if (menuBtn === btn) return closeMenu();
     closeMenu();
@@ -1328,7 +1405,6 @@
       : plural(ids.length, 'song') + (atFront ? ' will play next' : ' added to queue'));
   }
 
-  // "Play last": these songs play after everything else in the current queue
   function playLastSongs(ids) {
     ids = ids.filter(id => byId(id));
     if (!ids.length) return;
@@ -1337,7 +1413,7 @@
       toast('Playing ' + plural(ids.length, 'song'));
       return;
     }
-    if (shuffleOn) { queueSongs(ids, false); return; }   // shuffle has no "end", so use the normal queue
+    if (shuffleOn) { queueSongs(ids, false); return; }
     tailQueue.push(...ids);
     refreshQueueUI();
     bump($('qBtn'), 'pop');
@@ -1345,7 +1421,6 @@
   }
   function clearQueue() { userQueue = []; tailQueue = []; refreshQueueUI(); toast('Queue cleared'); }
 
-  // save the current song + everything coming up as a new playlist
   async function saveQueueAsPlaylist() {
     const ids = [];
     const add = id => { if (byId(id) && !ids.includes(id)) ids.push(id); };
@@ -1366,7 +1441,6 @@
 
   const atQueueEnd = () => !queue.length || (!shuffleOn && queue.indexOf(ctxId) + 1 >= queue.length);
 
-  /* ----- Queue sidebar ----- */
   function setQueueOpen(v) {
     qOpen = v;
     document.body.classList.toggle('q-open', v);
@@ -1511,7 +1585,6 @@
     const base = baseList();
     const list = viewList();
 
-    // hero
     $('heroLabel').textContent = (isLikedView || pl) ? 'Playlist' : isRecent ? 'History' : 'Library';
     $('heroTitle').textContent = isLikedView ? 'Liked Songs' : isRecent ? 'Recently Played' : (pl ? pl.name : 'Your Library');
     const secs = base.reduce((s, t) => s + (t.duration || 0), 0);
@@ -1527,7 +1600,6 @@
     $('renamePl').hidden = !pl; $('deletePl').hidden = !pl;
     $('clearRecent').hidden = !isRecent;
 
-    // playlists can be reordered by dragging when nothing is sorted or filtered
     const canReorder = !!pl && !sortKey && !$('search').value.trim() && list.length === pl.trackIds.length && list.length > 1;
     $('reorderHint').hidden = !canReorder;
 
@@ -1761,7 +1833,6 @@
     document.title = t ? titleOf(t) + ' · ' + artistOf(t) : 'VibeX';
     $('play').textContent = audio.paused ? '▶' : '⏸';
 
-    // little animations when the song or the play state changes
     if (curId !== barLast) {
       if (barLast !== null || curId !== null) { bump($('npThumb'), 'swap'); bump($('npName'), 'swap'); bump($('npSub'), 'swap'); }
       barLast = curId;
@@ -1952,7 +2023,7 @@
     fillThumb($('npArt'), t);
     $('npTitle').textContent = titleOf(t);
     $('npArtist').textContent = artistOf(t);
-    if (npLast !== t.id) {            // new song: let the art and text glide in
+    if (npLast !== t.id) {
       if (npLast !== null) { bump($('npArt'), 'swap'); bump($('npTitle'), 'swap'); bump($('npArtist'), 'swap'); }
       npLast = t.id;
     }
@@ -2016,7 +2087,6 @@
     if (miniPlayerActive) updateMiniPlayer();
   }
 
-  // Wire Mini-Player Controls
   $('mpToggleBtn').onclick = () => toggleMiniPlayer(true);
   $('mpClose').onclick = () => toggleMiniPlayer(false);
   $('mpExpand').onclick = () => { toggleMiniPlayer(false); openNP(); };
@@ -2087,7 +2157,6 @@
     urls[i] = URL.createObjectURL(t.blob);
     players[i].src = urls[i];
   }
-  // set a player's fade level (0 to 1) instantly
   function setGain(i, v) {
     if (!graphReady) return;
     const g = pg[i].gain;
@@ -2095,7 +2164,6 @@
     g.setValueAtTime(v, actx.currentTime);
   }
 
-  // end a crossfade right now: the new song is at full volume, the old one is stopped
   function finishFade() {
     if (!xfading) return;
     clearTimeout(fadeTimer);
@@ -2110,12 +2178,11 @@
     setGain(0, 1); setGain(1, 1);
   }
 
-  // how many seconds to crossfade for this change (0 = no crossfade)
   function decideFade(before, id) {
     if (!cf.on || !graphReady || before == null || before === id) return 0;
     if (audio.paused || !audio.src || audio.ended) return 0;
-    if (fadeSecsNext != null) return Math.max(0.3, fadeSecsNext);   // automatic: fade for the time that is left
-    return Math.min(1.5, cf.secs);                                  // you skipped: short fade
+    if (fadeSecsNext != null) return Math.max(0.3, fadeSecsNext);
+    return Math.min(1.5, cf.secs);
   }
 
   function startCrossfade(t, secs) {
@@ -2126,7 +2193,6 @@
     setUrl(inn, t);
     audio = players[inn]; active = inn;
 
-    // equal-power curves so the loudness stays steady in the middle of the fade
     const N = 128, up = new Float32Array(N), down = new Float32Array(N);
     for (let k = 0; k < N; k++) {
       const x = k / (N - 1);
@@ -2149,14 +2215,13 @@
     audio.play().catch(e => { if (e.name !== 'AbortError') msg('Press play to start (' + e.name + ').', true); });
   }
 
-  // called while a song plays: when it is nearly over, start blending into the next one
   function maybeAutoFade() {
     if (!cf.on || !graphReady || xfading || curId == null || sleepAtEnd) return;
     if (audio.paused || !isFinite(audio.duration) || !audio.duration) return;
-    if (repeatMode === 2) return;                                   // repeat-one just loops
+    if (repeatMode === 2) return;
     const rate = audio.playbackRate || 1;
     const secs = Math.min(cf.secs, audio.duration / rate / 2);
-    const remain = (audio.duration - audio.currentTime) / rate;     // real seconds left (speed aware)
+    const remain = (audio.duration - audio.currentTime) / rate;
     if (remain > secs || remain <= 0.05) return;
 
     let plan = null;
@@ -2167,7 +2232,7 @@
       if (ti !== -1 && atQueueEnd()) plan = { id: tailQueue[ti], fromQueue: true, tail: true, qi: ti };
       else { const n = pickNext(true); if (n != null && n !== curId) plan = { id: n, fromQueue: false }; }
     }
-    if (!plan) return;                                              // nothing next: let it finish normally
+    if (!plan) return;
 
     if (plan.fromQueue) (plan.tail ? tailQueue : userQueue).splice(0, plan.qi + 1);
     fadeSecsNext = remain;
@@ -2249,13 +2314,13 @@
     bump($('bigPlay'), 'pulse');
   }
 
-  /* ================= audio events (only the active player counts) ================= */
+  /* ================= audio events ================= */
   const onAudio = (ev, fn) => players.forEach(p => p.addEventListener(ev, e => { if (p === audio) fn(e); }));
 
   onAudio('play', () => { updateBar(); renderMain(); });
   onAudio('pause', () => { updateBar(); renderMain(); saveSession(true); });
   onAudio('ended', () => {
-    if (sleepAtEnd) {                                   // sleep timer: "End of this song"
+    if (sleepAtEnd) {
       sleepAtEnd = false;
       pauseAll(); audio.currentTime = 0;
       $('sleepTimerSelect').value = '0'; $('sleepTimerStatus').textContent = '';
@@ -2302,6 +2367,7 @@
   $('navRecent').onclick = () => setView('recent');
   $('logoHome').onclick = () => setView('home');
   $('npLike').onclick = () => { if (curId != null) { toggleLike(curId); bump($('npLike'), 'pop'); } };
+  $('themeToggle').onclick = toggleTheme;
 
   $('newPl').onclick = async () => {
     const name = await askName('New playlist');
@@ -2315,14 +2381,14 @@
   $('deletePl').onclick = () => {
     const p = playlists.find(p => p.id === view); if (!p) return;
     const note = document.createElement('p');
-    note.style.cssText = 'color:#b3b3b3;margin:0';
+    note.style.cssText = 'color:var(--muted);margin:0';
     note.textContent = 'This removes the playlist only. Your songs stay in your library.';
     openDialog('Delete "' + p.name + '"?', [note],
       [{ label: 'Cancel' }, { label: 'Delete', cls: 'danger', fn: () => deletePlaylist(p) }]);
   };
   $('clearRecent').onclick = () => {
     const note = document.createElement('p');
-    note.style.cssText = 'color:#b3b3b3;margin:0';
+    note.style.cssText = 'color:var(--muted);margin:0';
     note.textContent = 'This clears your listening history only. Your songs stay in your library.';
     openDialog('Clear history?', [note],
       [{ label: 'Cancel' }, { label: 'Clear', cls: 'danger', fn: () => { recents = []; saveRecents(); renderAll(); toast('History cleared'); } }]);
@@ -2337,13 +2403,11 @@
     };
   });
 
-  // queue buttons
   $('queueAll').onclick = () => queueSongs(viewList().map(t => t.id), false);
   $('qBtn').onclick = () => setQueueOpen(!qOpen);
   $('qpClose').onclick = () => setQueueOpen(false);
   $('qpSave').onclick = saveQueueAsPlaylist;
 
-  // Now Playing page open/close
   $('npBack').onclick = () => closeNP();
   $('npThumb').onclick = $('npName').onclick = () => { npOpen ? closeNP() : openNP(); };
 
@@ -2360,7 +2424,6 @@
   };
   $('seek').oninput = e => { if (audio.duration) audio.currentTime = e.target.value / 1000 * audio.duration; setPct(e.target); };
 
-  // volume / mute apply to both players
   const applyMaster = () => players.forEach(p => { p.volume = masterVol; p.muted = masterMuted; });
   function setVolume(v, show) {
     masterVol = Math.min(1, Math.max(0, v)); masterMuted = false; applyMaster();
@@ -2389,7 +2452,7 @@
   }
   function applySpeed() {
     players.forEach(p => {
-      p.defaultPlaybackRate = speed;      // keeps the speed when a new song loads
+      p.defaultPlaybackRate = speed;
       p.playbackRate = speed;
       p.preservesPitch = true; p.mozPreservesPitch = true; p.webkitPreservesPitch = true;
     });
@@ -2490,7 +2553,7 @@
     navigator.mediaSession.setActionHandler('previoustrack', prev);
   }
 
-  // drag & drop audio files anywhere (only reacts to real files, so song reordering stays separate)
+  // drag & drop
   const main = $('main');
   const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
   ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => {
@@ -2504,7 +2567,7 @@
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   });
 
-  /* ================= settings: equalizer (Web Audio) ================= */
+  /* ================= settings: equalizer ================= */
   const EQ_FREQS  = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
   const EQ_LABELS = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
   const EQ_PRESETS = {
@@ -2533,7 +2596,6 @@
       const AC = window.AudioContext || window.webkitAudioContext;
       actx = new AC();
       preGain = actx.createGain();
-      // each player gets its own fade-level node, then both feed the equalizer
       pg = players.map(p => {
         const s = actx.createMediaElementSource(p);
         const g = actx.createGain();
@@ -2670,6 +2732,10 @@
 
   /* ================= update log ================= */
   const CHANGELOG = [
+    { v: '2.1', date: 'Nov 2026', notes: [
+      'Added Light / Dark mode toggle (sun/moon button in the sidebar)',
+      'Theme preference is saved and respects system preference on first visit'
+    ]},
     { v: '2.0', date: 'Nov 2026', notes: [
       'Added dynamic accent coloring derived from cover art',
       'Animated equalizer bars now show on the song that is playing',
@@ -2773,3 +2839,4 @@
 </script>
 </body>
 </html>
+```
