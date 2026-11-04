@@ -466,6 +466,122 @@
   .st-row.dis { opacity: .5; transition: opacity .3s ease; }
   .st-row { transition: opacity .3s ease; }
 
+  /* ---------- Floating Mini Player ---------- */
+  .mini-player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(24, 24, 24, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    min-width: 320px;
+    max-width: 400px;
+    animation: fadeUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .mini-player[hidden] {
+    display: none !important;
+  }
+  .mp-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    background: #282828;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .mp-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .mp-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mp-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
+  }
+  .mp-artist {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mp-progress {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .mp-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    transition: width 0.2s linear;
+  }
+  .mp-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mp-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+  .mp-btn:hover {
+    color: #fff;
+    transform: scale(1.1);
+  }
+  .mp-btn.mp-play {
+    background: #fff;
+    color: #000;
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+  .mp-btn.mp-play:hover {
+    background: var(--green);
+    transform: scale(1.08);
+  }
+  .mp-btn.mp-expand:hover {
+    color: var(--green);
+  }
+  .mp-btn.mp-close:hover {
+    color: #ff8a8a;
+  }
+
   /* ---------- Respect people who prefer less motion ---------- */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
@@ -585,6 +701,25 @@
   </div>
 </section>
 
+<!-- Floating Mini-Player -->
+<div id="miniPlayer" class="mini-player" hidden>
+  <div class="mp-art" id="mpArt">♪</div>
+  <div class="mp-info">
+    <div class="mp-title" id="mpTitle">Nothing playing</div>
+    <div class="mp-artist" id="mpArtist">Select a track</div>
+    <div class="mp-progress">
+      <div class="mp-bar" id="mpBar"></div>
+    </div>
+  </div>
+  <div class="mp-controls">
+    <button class="mp-btn" id="mpPrev" title="Previous">⏮</button>
+    <button class="mp-btn mp-play" id="mpPlay" title="Play/Pause">▶</button>
+    <button class="mp-btn" id="mpNext" title="Next">⏭</button>
+    <button class="mp-btn mp-expand" id="mpExpand" title="Expand to full player">⛶</button>
+    <button class="mp-btn mp-close" id="mpClose" title="Hide mini-player">✕</button>
+  </div>
+</div>
+
 <footer class="bar" id="bar">
   <div class="np">
     <div class="thumb" id="npThumb" title="Open Now Playing">♪</div>
@@ -614,6 +749,7 @@
 
   <div class="right">
     <button class="ctl" id="speedBtn" title="Playback speed (click to change)">1x</button>
+    <button class="ctl" id="mpToggleBtn" title="Switch to Mini Player">⛶</button>
     <button class="ctl" id="qBtn" title="Queue">☰</button>
     <button class="ctl" id="mute" title="Mute">🔊</button>
     <input type="range" id="vol" min="0" max="100" value="80">
@@ -1638,6 +1774,7 @@
     updateQBadge();
     renderNP();
     renderQueuePanel();
+    updateMiniPlayer();
   }
   function renderAll(skipHome) {
     renderSidebar();
@@ -1849,6 +1986,40 @@
       list.appendChild(row);
     });
   }
+
+  /* ================= Mini Player Logic ================= */
+  const miniPlayer = $('miniPlayer');
+  let miniPlayerActive = false;
+
+  function updateMiniPlayer() {
+    if (!miniPlayerActive) return;
+    const t = byId(curId);
+    $('mpTitle').textContent = t ? titleOf(t) : 'Nothing playing';
+    $('mpArtist').textContent = t ? artistOf(t) : 'Select a track';
+    fillThumb($('mpArt'), t);
+    $('mpPlay').textContent = audio.paused ? '▶' : '⏸';
+
+    if (audio.duration) {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      $('mpBar').style.width = pct + '%';
+    } else {
+      $('mpBar').style.width = '0%';
+    }
+  }
+
+  function toggleMiniPlayer(show) {
+    miniPlayerActive = typeof show === 'boolean' ? show : !miniPlayerActive;
+    miniPlayer.hidden = !miniPlayerActive;
+    if (miniPlayerActive) updateMiniPlayer();
+  }
+
+  // Wire Mini-Player Controls
+  $('mpToggleBtn').onclick = () => toggleMiniPlayer(true);
+  $('mpClose').onclick = () => toggleMiniPlayer(false);
+  $('mpExpand').onclick = () => { toggleMiniPlayer(false); openNP(); };
+  $('mpPlay').onclick = toggle;
+  $('mpNext').onclick = () => next(false);
+  $('mpPrev').onclick = prev;
 
   /* ================= resume where you left off ================= */
   const RESUME_KEY = 'vibex-resume-v1';
@@ -2099,6 +2270,7 @@
     if (audio.duration) { $('seek').value = audio.currentTime / audio.duration * 1000; setPct($('seek')); }
     maybeAutoFade();
     saveSession(false);
+    updateMiniPlayer();
   });
   onAudio('error', () => {
     const t = byId(curId); if (!t) return;
