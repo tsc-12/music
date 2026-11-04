@@ -80,7 +80,7 @@
   .side-note { color: var(--muted); font-size: .72rem; line-height: 1.4; padding: 0 8px; }
 
   /* ---------- Main ---------- */
-  .main { background: linear-gradient(#2c2c54 0, var(--panel) 300px); border-radius: 8px; overflow-y: auto; position: relative; min-width: 0; transition: margin-right .4s var(--ease), outline-color .2s ease; outline: 2px dashed transparent; outline-offset: -8px; }
+  .main { background: linear-gradient(var(--dynamic-accent, #2c2c54) 0, var(--panel) 300px); border-radius: 8px; overflow-y: auto; position: relative; min-width: 0; transition: margin-right .4s var(--ease), outline-color .2s ease, background 0.6s ease; outline: 2px dashed transparent; outline-offset: -8px; }
   body.q-open .main { margin-right: 8px; }
   .main.dragover { outline-color: var(--green); }
   #homeView:not([hidden]), #searchView:not([hidden]), #libView:not([hidden]) { animation: fadeUp .4s var(--ease); }
@@ -145,13 +145,13 @@
   #npPage {
     position: fixed; left: 8px; right: 8px; top: 8px; bottom: 106px; z-index: 40;
     border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column;
-    background: linear-gradient(180deg, #2c2c54 0%, #121212 90%);
+    background: linear-gradient(180deg, var(--dynamic-accent, #2c2c54) 0%, #121212 90%);
     opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(32px) scale(.985);
-    transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s linear .45s, right .4s var(--ease);
+    transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s linear .45s, right .4s var(--ease), background 0.6s ease;
   }
   #npPage.open {
     opacity: 1; visibility: visible; pointer-events: auto; transform: none;
-    transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s, right .4s var(--ease);
+    transition: opacity .35s var(--ease), transform .45s var(--ease), visibility 0s, right .4s var(--ease), background 0.6s ease;
   }
   body.q-open #npPage { right: 356px; }   /* leave room for the Queue sidebar */
   .np-top { display: flex; align-items: center; gap: 14px; padding: 18px 24px; position: sticky; top: 0; z-index: 2; }
@@ -1919,9 +1919,12 @@
   window.addEventListener('resize', setNpBottom);
 
   function setNpBackground(t) {
-    const apply = c => { npPage.style.background = `linear-gradient(180deg, ${c} 0%, #121212 90%)`; };
+    const apply = c => { 
+      document.documentElement.style.setProperty('--dynamic-accent', c);
+    };
     if (colorCache.has(t.id)) return apply(colorCache.get(t.id));
-    apply(`hsl(${hue(titleOf(t))},45%,28%)`);
+    const fallbackColor = `hsl(${hue(titleOf(t))},45%,28%)`;
+    apply(fallbackColor);
     const u = coverUrl(t);
     if (!u) return;
     const img = new Image();
@@ -1935,7 +1938,7 @@
         const k = 0.75 / n;
         const col = `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)})`;
         colorCache.set(t.id, col);
-        if (npOpen && curId === t.id) apply(col);
+        if (curId === t.id) apply(col);
       } catch (e) {}
     };
     img.src = u;
@@ -1987,7 +1990,7 @@
     });
   }
 
-  /* ================= Mini Player Logic ================= */
+  /* ================= Floating Mini Player ================= */
   const miniPlayer = $('miniPlayer');
   let miniPlayerActive = false;
 
@@ -2067,6 +2070,7 @@
     }, { once: true });
     setUrl(active, t);
     setMediaMeta(t);
+    setNpBackground(t);
     toast('Ready to resume: ' + titleOf(t));
   }
 
@@ -2186,6 +2190,7 @@
     fadeSecsNext = null;
     if (fade > 0) startCrossfade(t, fade); else loadInto(t);
 
+    setNpBackground(t);
     renderAll(true);
     setMediaMeta(t);
     saveSession(true);
@@ -2666,6 +2671,7 @@
   /* ================= update log ================= */
   const CHANGELOG = [
     { v: '2.0', date: 'Nov 2026', notes: [
+      'Added dynamic accent coloring derived from cover art',
       'Animated equalizer bars now show on the song that is playing',
       'Drag songs to reorder the queue and your playlists (or use Move up / Move down in the ⋯ menu)',
       'Added Save as playlist in the Queue sidebar, a Play last option, and a Recently Played page',
